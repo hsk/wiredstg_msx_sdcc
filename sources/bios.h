@@ -1,10 +1,4 @@
 // bios.h : BIOS コール
-//
-
-
-// マクロの定義
-//
-
 // MAIN-ROM コールアドレス
 #define CHKRAM      0x0000          /* RAM をチェックし、システム用の RAM スロットをセット */
 #define SYNCHR      0x0008          /* [HL] の 1 文字が指定した文字かどうかチェック */
@@ -96,7 +90,6 @@
 #define NSTWRT      0x0171          /* VDP にアドレスをセットして、書き込める状態にする */
 #define NRDVRM      0x0174          /* VRAM の内容を読む */
 #define NWRVRM      0x0177          /* VRAM にデータを書き込む */
-
 // // SUB-ROM コールアドレス
 // #define GRPPRT      0x0089          /* グラフィック画面に 1 文字出力 */
 // #define NVBXLN      0x00c9          /* ボックスを描く */
@@ -134,7 +127,6 @@
 // #define KNJPRT      0x01bd          /* グラフィック画面 (5～8) に漢字出力 */
 // #define REDCLK      0x01f5          /* クロック・データを読む */
 // #define WRTCLK      0x01f9          /* クロック・データを書き込む */
-
 // ワークエリア
 #define RDPRIM      0xf380          /* 基本スロットからの読み込み */
 #define WRPRIM      0xf385          /* 基本スロットへ書き込み */

@@ -87,7 +87,7 @@ CSRCS			=	\
 OBJS			=	$(ASSRCS:.s=.rel) $(CSRCS:.c=.rel)
 
 r: $(TARGET).com
-	openmsx -machine Sanyo_PHC-70FD2 -diska $(OUTDIR) -command "set speed 9999;after time 12.5 \"set speed 100\""
+	openmsx -machine Sanyo_PHC-70FD2 -diska $(OUTDIR) -command "set speed 9999;after time 12.5 \"set speed 400\""
 
 # build project target
 #

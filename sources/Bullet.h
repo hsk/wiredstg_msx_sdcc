@@ -1,5 +1,4 @@
-// Bullet.inc : 弾
-
+// Bullet.h : 弾
 // 弾
 #define BULLET_TYPE        0x00
 #define BULLET_STATE       0x01

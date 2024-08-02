@@ -1,5 +1,4 @@
 // Ship.h : 自機
-
 // 自機
 #define SHIP_TYPE          0x00
 #define SHIP_STATE         0x01

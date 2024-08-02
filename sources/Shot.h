@@ -1,5 +1,4 @@
 // Shot.h : ショット
-
 // ショット
 #define SHOT_TYPE         0x00
 #define SHOT_STATE        0x01

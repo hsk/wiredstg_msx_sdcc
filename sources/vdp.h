@@ -1,10 +1,4 @@
 // vdp.h : VDP(TMS9918A)
-//
-
-
-// マクロの定義
-//
-
 // レジスタ
 #define VDP_R0          0 /* mode register #0 */
 #define VDP_R0_M5       3 /* screen mode */
@@ -58,7 +52,6 @@
 #define VDP_R7_BD2      2 /* text color bit 2 */
 #define VDP_R7_BD1      1 /* text color bit 1 */
 #define VDP_R7_BD0      0 /* text color bit 0 */
-
 // 色
 #define VDP_COLOR_TRANSPARENT   0x00
 #define VDP_COLOR_BLACK         0x01
@@ -76,9 +69,7 @@
 #define VDP_COLOR_MAGENTA       0x0d
 #define VDP_COLOR_GRAY          0x0e
 #define VDP_COLOR_WHITE         0x0f
-
 // スプライト
-//
 #define VDP_SPRITE_N            0x20
 #define VDP_SPRITE_Y            0x00
 #define VDP_SPRITE_X            0x01

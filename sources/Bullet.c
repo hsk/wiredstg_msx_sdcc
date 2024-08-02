@@ -7,16 +7,12 @@
 #include "Ship.h"
 #include "Bullet.h"
 // 変数の定義
-// 弾
-char bullet[BULLET_SIZE * BULLET_N];
+char bullet[BULLET_SIZE * BULLET_N];// 弾
 char bulletN;
-// タイマ
-static char bulletTimer;
+static char bulletTimer;// タイマ
 // 弾を初期化する
 void BulletInitialize(void) __naked {
     __asm;
-    // レジスタの保存
-    
     // 弾の初期化
     ld      hl, #(_bullet + 0x0000)
     ld      de, #(_bullet + 0x0001)
@@ -26,29 +22,22 @@ void BulletInitialize(void) __naked {
     ldir
     ld      a, #0x07
     ld      (_bulletN), a
-    
     // タイマの初期化
     xor     a
     ld      (_bulletTimer), a
-    
-    // レジスタの復帰
-    
-    // 終了
     ret
-
+    __endasm;
+}
 // 弾を生成する
-//
-_BulletGenerate::
-    
+void BulletGenerate(void) __naked {
+    __asm;
     // レジスタの保存
     push    ix
-    
     // 自機の存在
     ld      iy, #_ship
     ld      a, SHIP_TYPE(iy)
     cp      #SHIP_TYPE_VICVIPER
     jp      nz, 99$
-    
     // 距離の取得
     ld      a, SHIP_POSITION_X(iy)
     sub     h
@@ -62,7 +51,6 @@ _BulletGenerate::
     jp      c, 99$
     cp      #0xf0
     jp      nc, 99$
-    
     // 空の取得
     ld      ix, #_bullet
     ld      de, #BULLET_SIZE
@@ -75,7 +63,6 @@ _BulletGenerate::
     add     ix, de
     djnz    10$
     jp      99$
-    
     // 生成の開始
 11$:
     xor     a
@@ -146,7 +133,6 @@ _BulletGenerate::
     ld      a, #0x04
     ld      BULLET_STATE(ix), a
 //   jr      18$
-
     // 速度の設定
 18$:
     ld      l, BULLET_SPEED_XD(ix)
@@ -159,22 +145,18 @@ _BulletGenerate::
     add     hl, hl
     ld      BULLET_SPEED_YD(ix), l
     ld      BULLET_SPEED_YI(ix), h
-    
     // 生成の完了
 99$:
-    
     // レジスタの復帰
     pop     ix
-    
     // 終了
     ret
-
+    __endasm;
+}
 // 弾を更新する
-//
-_BulletUpdate::
-    
+void BulletUpdate(void) __naked {
+    __asm;
     // レジスタの保存
-    
     // 弾の走査
     ld      ix, #_bullet
     ld      a, (_bulletN)
@@ -183,7 +165,6 @@ _BulletUpdate::
     ld      a, BULLET_STATE(ix)
     or      a
     jp      z, 19$
-    
     // 弾の移動
     dec     a
     jr      nz, 11$
@@ -266,34 +247,27 @@ _BulletUpdate::
     ld      BULLET_POSITION_YD(ix), l
     ld      BULLET_POSITION_YI(ix), h
     jr      19$
-    
     // 弾の削除
 18$:
     xor     a
     ld      BULLET_STATE(ix), a
-    
     // 次の弾へ
 19$:
     ld      de, #BULLET_SIZE
     add     ix, de
     dec     b
     jp      nz, 10$
-    
     // タイマの更新
     ld      hl, #_bulletTimer
     inc     (hl)
-    
     // レジスタの復帰
-    
     // 終了
     ret
-
+    __endasm;
+}
 // 弾を描画する
-//
-_BulletRender::
-    
-    // レジスタの保存
-    
+void BulletRender(void) __naked {
+    __asm;    
     // スプライトの描画
     ld      ix, #_bullet
     ld      hl, #_sprite + GAME_SPRITE_BULLET
@@ -334,10 +308,6 @@ _BulletRender::
     ld      de, #BULLET_SIZE
     add     ix, de
     djnz    10$
-    
-    // レジスタの復帰
-    
-    // 終了
     ret
     __endasm;
 }

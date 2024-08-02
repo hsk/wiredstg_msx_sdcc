@@ -1,5 +1,4 @@
 // Ground.h : 地面
-
 // ジェネレータ
 #define GROUND_GENERATOR_UPPER_STATE    0x00
 #define GROUND_GENERATOR_UPPER_HEIGHT   0x01

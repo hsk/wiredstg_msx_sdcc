@@ -1,5 +1,4 @@
 // Enemy.h : 敵
-
 // 敵
 #define ENEMY_TYPE              0x00
 #define ENEMY_STATE             0x01
