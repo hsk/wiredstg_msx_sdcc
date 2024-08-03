@@ -129,7 +129,19 @@ void AppUpdate(void) __naked {
     2$:
         cp      #APP_STATE_TITLE_UPDATE
         jr      nz, 3$
+        // レジスタの保存
+        push    hl
+        push    bc
+        push    de
+        push    ix
+        push    iy
         call    _TitleUpdate
+        // レジスタの復帰
+        pop     iy
+        pop     ix
+        pop     de
+        pop     bc
+        pop     hl
         jr      9$
         // ゲームの初期化
     3$:

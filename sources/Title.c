@@ -29,168 +29,67 @@ static char titleState;    // 状態
 static char titleAnimation;// アニメーション
 static char titleTimer;    // タイマ
 // タイトルを初期化する
-void TitleInitialize(void) __naked {
-    __asm;    
-    // スプライトのクリア
-    call    _SystemClearSprite
-    // パターンのクリア
-    ld      hl, #(_appPatternName + 0x0000)
-    ld      de, #(_appPatternName + 0x0001)
-    ld      bc, #0x02ff
-    xor     a
-    ld      (hl), a
-    ldir
-    // パターンネームの転送
-    call    _AppTransferPatternName
+void TitleInitialize(void) {
+    SystemClearSprite();// スプライトのクリア
+    for(short i=0;i<0x300;i++)appPatternName[i]=0;// パターンのクリア
+    AppTransferPatternName();// パターンネームの転送
     // パターンジェネレータの設定
-    ld      a, #(APP_PATTERN_GENERATOR_TABLE_0 >> 11)
-    ld      (_videoRegister + VDP_R4), a
-    // 描画の開始
-    ld      hl, #(_videoRegister + VDP_R1)
-    set     #VDP_R1_BL, (hl)
-    // ビデオレジスタの転送
-    ld      hl, #_request
-    set     #REQUEST_VIDEO_REGISTER, (hl)
-    // 状態の設定
-    xor     a
-    ld      (_titleState), a
-    ld      a, #APP_STATE_TITLE_UPDATE
-    ld      (_appState), a
-    ret
-    __endasm;
+    videoRegister[VDP_R4] = APP_PATTERN_GENERATOR_TABLE_0 >> 11;
+    videoRegister[VDP_R1] |= 1<<VDP_R1_BL;// 描画の開始
+    request |= 1<<REQUEST_VIDEO_REGISTER;// ビデオレジスタの転送
+    titleState = 0;// 状態の設定
+    appState = APP_STATE_TITLE_UPDATE;
+}
+static void updateInit(void) {
+    if (titleState==0) {// 初期化の開始
+        titleAnimation = 0; // アニメーションの初期化
+        titleTimer = 0;     // タイマの初期化
+        titleState++;       // 初期化の完了
+    }
+}
+static void updateAnim(void) {
+    // アニメーションの更新
+    if (titleAnimation<0x60)titleAnimation++;
+    for(char b=titleAnimation,*hl=titleLogoString,*de=appPatternName + 0x00c0;b;--b)
+        *de++ = *hl++; 
+}
+static void drawHiscore(void) {
+    // ハイスコアの描画
+    if (titleAnimation<0x60)return;
+    for(char b=0x11,*hl=titleScoreString,*de=appPatternName + 0x0187;b;--b)
+        *de++ = *hl++; 
+    for(char b=6,*hl=appScore,*de=appPatternName + 0x0190;b;--b,hl++,de++) {
+        if (*hl==0) continue;
+        for(;b;--b) *de++ = *hl++ + 0x50;
+        *de = 0x50;
+        break;
+    }
+    // SPACE キーの描画
+    for(char b=0x0f,*hl=titleSpaceString+(titleTimer&0x10),*de=appPatternName + 0x0228;b;--b)
+        *de++ = *hl++; 
 }
 // タイトルを更新する
-void TitleUpdate(void) __naked {
-    __asm;
-    // レジスタの保存
-    push    hl
-    push    bc
-    push    de
-    push    ix
-    push    iy
-    // 初期化の開始
-    ld      a, (_titleState)
-    or      a
-    jr      nz, 09$
-        // アニメーションの初期化
-        xor     a
-        ld      (_titleAnimation), a
-        // タイマの初期化
-        ld      (_titleTimer), a
-        // 初期化の完了
-        ld      hl, #_titleState
-        inc     (hl)
-    09$:
-    // 乱数の更新
-    call    _SystemGetRandom
-    // SPACE キーの監視
-    ld      hl, #_titleState
-    ld      a, (hl)
-    dec     a
-    jr      nz, 19$
-        // タイマの更新
-        ld      hl, #_titleTimer
-        inc     (hl)
-        // SPACE キーの押下
-        ld      a, (_input + INPUT_BUTTON_SPACE)
-        dec     a
-        jr      nz, 90$
-        ld      hl, #_titleState
-        inc     (hl)
-        // アニメーションの設定
-        ld      a, #0x60
-        ld      (_titleAnimation), a
-        // ジングルの再生
-        ld      hl, #_titleJingle0
-        ld      (_soundRequest + 0x0000), hl
-        ld      hl, #_titleJingle1
-        ld      (_soundRequest + 0x0002), hl
-        ld      hl, #_titleJingle2
-        ld      (_soundRequest + 0x0004), hl
-        jr      90$
-        // SPACE キー監視の完了
-    19$:
-        // タイマの更新
-        ld      hl, #_titleTimer
-        ld      a, (hl)
-        add     a, #0x08
-        ld      (hl), a
-        // ジングルの監視
-        ld      hl, (_soundPlay + 0x0000)
-        ld      a, h
-        or      l
-        jr      nz, 29$
-            //   // 描画の停止
-            //   ld      hl, #(_videoRegister + VDP_R1)
-            //   res     #VDP_R1_BL, (hl)
-            //   // ビデオレジスタの転送
-            //   ld      hl, #_request
-            //   set     #REQUEST_VIDEO_REGISTER, (hl)
-            // ゲームの開始
-            ld      a, #APP_STATE_GAME_INITIALIZE
-            ld      (_appState), a
-            //   jr      90$
-            // ジングル監視の完了
-        29$:
-    90$:// アニメーションの更新
-    ld      hl, #_titleAnimation
-    ld      a, (hl)
-    cp      #0x60
-    adc     a, #0x00
-    ld      (hl), a
-    ld      hl, #_titleLogoString
-    ld      de, #(_appPatternName + 0x00c0)
-    ld      c, a
-    ld      b, #0x00
-    ldir
-    // ハイスコアの描画
-    ld      a, (_titleAnimation)
-    cp      #0x60
-    jr      c, 98$
-        ld      hl, #_titleScoreString
-        ld      de, #(_appPatternName + 0x0187)
-        ld      bc, #0x0011
-        ldir
-        ld      hl, #_appScore
-        ld      de, #(_appPatternName + 0x0190)
-        ld      bc, #0x0650
-        91$:
-            ld      a, (hl)
-            or      a
-            jr      nz, 92$
-            inc     hl
-            inc     de
-        djnz    91$
-        jr      93$
-            92$:
-                ld      a, (hl)
-                add     a, c
-                ld      (de), a
-                inc     hl
-                inc     de
-            djnz    92$
-            ld      a, c
-            ld      (de), a
-        93$:
-        // SPACE キーの描画
-        ld      a, (_titleTimer)
-        and     #0x10
-        ld      c, a
-        ld      b, #0x00
-        ld      hl, #_titleSpaceString
-        add     hl, bc
-        ld      de, #(_appPatternName + 0x0228)
-        ld      bc, #0x0f
-        ldir
-        // アニメーションの完了
-    98$:
-    call    _AppTransferPatternName
-    // レジスタの復帰
-    pop     iy
-    pop     ix
-    pop     de
-    pop     bc
-    pop     hl
-    ret
-    __endasm;
+void TitleUpdate(void) {
+    updateInit();
+    SystemGetRandom();// 乱数の更新
+    if (titleState==1) {// SPACE キーの監視
+        titleTimer++;// タイマの更新
+        if (input[INPUT_BUTTON_SPACE]==1) {// SPACE キーの押下
+            titleState++;
+            titleAnimation=0x60;// アニメーションの設定
+            soundRequest[0] = titleJingle0;// ジングルの再生
+            soundRequest[1] = titleJingle1;
+            soundRequest[2] = titleJingle2;
+        }
+    } else {
+        titleTimer += 8;// タイマの更新
+        if(soundPlay[0]==0) {// ジングルの監視
+            //videoRegister[VDP_R1] &= ~(1<<VDP_R1_BL); // 描画の停止
+            //request |= 1<<REQUEST_VIDEO_REGISTER;// ビデオレジスタの転送
+            appState = APP_STATE_GAME_INITIALIZE;// ゲームの開始
+        }
+    }
+    updateAnim();
+    drawHiscore();
+    AppTransferPatternName();
 }
