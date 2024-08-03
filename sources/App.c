@@ -20,7 +20,8 @@ static char const videoScreen1[] = {
     0b00000111,
 };
 // スコア
-static char const appScoreDefault[] = { 0x00, 0x00, 0x00, 0x05, 0x07, 0x03, };
+//static char const appScoreDefault[] = { 0x00, 0x00, 0x00, 0x05, 0x07, 0x03, };
+static char const appScoreDefault[] = { 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, };
 // 変数の定義
 char appState;// 状態
 char appColor;// 色
@@ -140,7 +141,18 @@ void AppUpdate(void) __naked {
     4$:
         cp      #APP_STATE_GAME_UPDATE
         jr      nz, 3$
+        // レジスタの保存
+        push    hl
+        push    bc
+        push    de
+        push    ix
+        push    iy
         call    _GameUpdate
+        pop     iy
+        pop     ix
+        pop     de
+        pop     bc
+        pop     hl
         //jr      9$
         // 更新の終了
     9$:

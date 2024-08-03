@@ -103,6 +103,6 @@ extern char videoPort[2];// ビデオ
 extern char videoRegister[8];
 extern char videoTransfer[VIDEO_TRANSFER_VRAM_SIZE * VIDEO_TRANSFER_SIZE];
 extern char sprite[128];// スプライト
-extern char soundRequest[8];// サウンド
+extern char* soundRequest[4];// サウンド
 extern char soundHead[8];
 extern char soundPlay[8];

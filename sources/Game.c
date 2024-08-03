@@ -156,498 +156,183 @@ static char gameScore[6];// スコア
 static char gameScorePlus;
 char gameScroll;// スクロール
 // ゲームを初期化する
-void GameInitialize(void) __naked {
-    __asm;
+void GameInitialize(void) {
     // ゲームの初期化
-    // 地面の初期化
-    call    _GroundInitialize
-    // 星の初期化
-    call    _StarInitialize
-    // 自機の初期化
-    call    _ShipInitialize
-    // ショットの初期化
-    call    _ShotInitialize
-    // 敵の初期化
-    call    _EnemyInitialize
-    // 弾の初期化
-    call    _BulletInitialize
-    // 一時停止の初期化
-    xor     a
-    ld      (_gamePause), a
-    // スコアの初期化
-    ld      hl, #(_gameScore + 0x0000)
-    ld      de, #(_gameScore + 0x0001)
-    ld      bc, #0x0005
-    xor     a
-    ld      (hl), a
-    ldir
-    ld      (_gameScorePlus), a
-    // スクロールの初期化
-    xor     a
-    ld      (_gameScroll), a
-    // パターンのクリア
-    ld      hl, #(_appPatternName + 0x0000)
-    ld      de, #(_appPatternName + 0x0001)
-    ld      bc, #0x02ff
-    xor     a
-    ld      (hl), a
-    ldir
+    GroundInitialize(); // 地面の初期化
+    StarInitialize(); // 星の初期化
+    ShipInitialize(); // 自機の初期化
+    ShotInitialize(); // ショットの初期化
+    EnemyInitialize(); // 敵の初期化
+    BulletInitialize(); // 弾の初期化
+    gamePause = 0;// 一時停止の初期化
+    for(char i=0;i<6;i++)gameScore[i]=0;// スコアの初期化
+    gameScorePlus = 0;
+    gameScroll = 0;// スクロールの初期化
+    for(short i=0;i<0x300;i++)appPatternName[i]=0;// パターンのクリア
     // パターンネームの転送
-    call    _AppTransferPatternName
-    //// 描画の開始
-    //ld      hl, #(_videoRegister + VDP_R1)
-    //set     #VDP_R1_BL, (hl)
-    //// ビデオレジスタの転送
-    //ld      hl, #_request
-    //set     #REQUEST_VIDEO_REGISTER, (hl)
+    AppTransferPatternName();
+    // videoRegister[VDP_R1] |= 1<<VDP_R1_BL;// 描画の開始
+    // request |= 1<<REQUEST_VIDEO_REGISTER;// ビデオレジスタの転送
     // 状態の設定
-    ld      a, #GAME_STATE_PLAY
-    ld      (_gameState), a
-    ld      a, #APP_STATE_GAME_UPDATE
-    ld      (_appState), a
-    ret
-    __endasm;
+    gameState = GAME_STATE_PLAY;
+    appState = APP_STATE_GAME_UPDATE;
 }
 static void GamePlay(void);
 static void GameOver(void);
 static void GameHitCheck(void);
 static void GameUpdateScore(void);
 // ゲームを更新する
-void GameUpdate(void) __naked {
-    __asm;
-    // レジスタの保存
-    push    hl
-    push    bc
-    push    de
-    push    ix
-    push    iy
+void GameUpdate(void) {
     // ESC キーで一時停止
-    ld      a, (_input + INPUT_BUTTON_ESC)
-    cp      #0x01
-    jr      nz, 09$
-    ld      hl, #_gamePause
-    sub     (hl)
-    ld      (hl), a
-    or      a
-    jr      z, 00$
-        call    _SystemSuspendSound
-        jr      09$
-    00$:
-        call    _SystemResumeSound
-        //jr      09$
-    09$:
-    ld      a, (_gamePause)
-    or      a
-    jr      nz, 99$
-        // 乱数の更新
-        call    _SystemGetRandom
-        // 状態別の処理
-        ld      a, (_gameState)
-        and     #0xf0
-        cp      #GAME_STATE_PLAY
-        jr      nz, 10$
-            call    _GamePlay
-            jr      19$
-        10$:
-            //cp      #GAME_STATE_OVER
-            //jr      nz, 19$
-            call    _GameOver
-            //jr      19$
-        19$:
-        // 更新の完了
-    99$:
-    // レジスタの復帰
-    pop     iy
-    pop     ix
-    pop     de
-    pop     bc
-    pop     hl
-    ret
-    __endasm;
-}    
+    if (input[INPUT_BUTTON_ESC] == 1) {
+        gamePause = 1 - gamePause;
+        if (gamePause) SystemSuspendSound();
+        else           SystemResumeSound();
+    }
+    if (gamePause) return;
+    SystemGetRandom();// 乱数の更新
+    char a = gameState & 0xf0;// 状態別の処理
+    if (a == GAME_STATE_PLAY) GamePlay();
+    else GameOver();
+}
 // ゲームをプレイする
-static void GamePlay(void) __naked {
-    __asm;
-    // 初期化の開始
-    ld      a, (_gameState)
-    and     #0x0f
-    jr      nz, 09$
-        // 描画の開始
-        ld      hl, #(_videoRegister + VDP_R1)
-        set     #VDP_R1_BL, (hl)
-        // ビデオレジスタの転送
-        ld      hl, #_request
-        set     #REQUEST_VIDEO_REGISTER, (hl)
-        // ＢＧＭの再生
-        ld      hl, #_gamePlayBgm0
-        ld      (_soundRequest + 0x0000), hl
-        ld      hl, #_gamePlayBgm1
-        ld      (_soundRequest + 0x0002), hl
-        ld      hl, #_gamePlayBgm2
-        ld      (_soundRequest + 0x0004), hl
-        // 初期化の完了
-        ld      hl, #_gameState
-        inc     (hl)
-    09$:
-    // スプライトのクリア
-    call    _SystemClearSprite
-    // 加算されるスコアのクリア
-    xor     a
-    ld      (_gameScorePlus), a
-    // スクロールの更新
-    ld      hl, #_gameScroll
-    ld      a, (hl)
-    inc     a
-    and     #0x0f
-    ld      (hl), a
-    // ヒットチェック
-    call    _GameHitCheck
-    // 地面の更新
-    call    _GroundUpdate
-    // 星の更新
-    call    _StarUpdate
-    // 自機の更新
-    call    _ShipUpdate
-    // ショットの更新
-    call    _ShotUpdate
-    // 敵の更新
-    call    _EnemyUpdate
-    // 弾の更新
-    call    _BulletUpdate
-    // 地面の描画
-    call    _GroundRender
-    // 星の描画
-    call    _StarRender
-    // 自機の描画
-    call    _ShipRender
-    // ショットの描画
-    call    _ShotRender
-    // 敵の描画
-    call    _EnemyRender
-    // 弾の描画
-    call    _BulletRender
-    // スコアの更新
-    call    _GameUpdateScore
-    // パターンネームの転送
-    call    _AppTransferPatternName
-    // ゲームオーバーの条件
-    ld      a, (_ship + SHIP_TYPE)
-    or      a
-    jr      nz, 19$
-        // ゲームオーバー
-        ld      a, #GAME_STATE_OVER
-        ld      (_gameState), a
-    19$:
-    ret
-    __endasm;
+static void GamePlay(void) {
+    if (!(gameState&0xf)) {// 初期化の開始
+        videoRegister[VDP_R1] |= 1<<VDP_R1_BL;// 描画の開始
+        request |= 1<<REQUEST_VIDEO_REGISTER;// ビデオレジスタの転送
+        soundRequest[0]=(void*)gamePlayBgm0;// ＢＧＭの再生
+        soundRequest[1]=(void*)gamePlayBgm1;
+        soundRequest[2]=(void*)gamePlayBgm2;
+        gameState++;// 初期化の完了
+    }
+    SystemClearSprite();// スプライトのクリア
+    gameScorePlus = 0;// 加算されるスコアのクリア
+    gameScroll = (gameScroll+1)&0x0f;// スクロールの更新
+    GameHitCheck(); // ヒットチェック
+    GroundUpdate(); // 地面の更新
+    StarUpdate(); // 星の更新
+    ShipUpdate(); // 自機の更新
+    ShotUpdate(); // ショットの更新
+    EnemyUpdate(); // 敵の更新
+    BulletUpdate(); // 弾の更新
+    GroundRender(); // 地面の描画
+    StarRender(); // 星の描画
+    ShipRender(); // 自機の描画
+    ShotRender(); // ショットの描画
+    EnemyRender(); // 敵の描画
+    BulletRender(); // 弾の描画
+    GameUpdateScore(); // スコアの更新
+    AppTransferPatternName(); // パターンネームの転送
+    if (ship[SHIP_TYPE])return;// ゲームオーバーの条件
+    gameState = GAME_STATE_OVER; // ゲームオーバー
 }
 // ゲームオーバーになる
-static void GameOver(void) __naked {
-    __asm;
-    // 初期化の開始
-    ld      a, (_gameState)
-    and     #0x0f
-    jr      nz, 09$
+static void GameOver(void) {
+    if (!(gameState&0xf)) {// 初期化の開始
         // ゲームオーバーの表示
-        ld      hl, #_gameOverString
-        ld      de, #(_appPatternName + 0x016b)
-        ld      bc, #0x000a
-        ldir
-        // パターンネームの転送
-        call    _AppTransferPatternName
-        // ＢＧＭの再生
-        ld      hl, #_gameOverBgm0
-        ld      (_soundRequest + 0x0000), hl
-        ld      hl, #_gameOverBgm1
-        ld      (_soundRequest + 0x0002), hl
-        ld      hl, #_gameOverBgm2
-        ld      (_soundRequest + 0x0004), hl
-        // 初期化の完了
-        ld      hl, #_gameState
-        inc     (hl)
-    09$:
-    // ＢＧＭの監視
-    ld      hl, (_soundRequest + 0x0000)
-    ld      a, h
-    or      l
-    ret     nz
-    ld      hl, (_soundPlay + 0x0000)
-    ld      a, h
-    or      l
-    ret     nz
-    // タイトルへ戻る
-    ld      a, #APP_STATE_TITLE_INITIALIZE
-    ld      (_appState), a
-    ret
-    __endasm;
+        for(char*hl=gameOverString,*de=&appPatternName[0x016b],i=0xa;i;i--)*de++ = *hl++;
+        AppTransferPatternName();// パターンネームの転送
+        soundRequest[0]=gameOverBgm0;// ＢＧＭの再生
+        soundRequest[1]=gameOverBgm1;
+        soundRequest[2]=gameOverBgm2;
+        gameState++;// 初期化の完了
+    }
+    if (soundRequest[0]||soundPlay[0]) return; // ＢＧＭの監視
+    appState = APP_STATE_TITLE_INITIALIZE; // タイトルへ戻る
+}
+static void check_shot(void) {// ショットのチェック
+    gameScorePlus = 0;// 加算されるスコアの設定
+    for(char *ix = shot, b = SHOT_N,c = 0;b;ix += SHOT_SIZE,--b) {
+        if(ix[SHOT_STATE]==0)continue;
+        unsigned short de = ((unsigned short)(ix[SHOT_POSITION_Y]&0xf8))*4+(ix[SHOT_POSITION_X]>>3);
+        char a = enemyCollision[de]; 
+        if (a) {
+            char* iy = enemy -16 + a*16;
+            if (--iy[ENEMY_HP]==0) {
+                iy[ENEMY_TYPE] = ENEMY_TYPE_BOMB;
+                iy[ENEMY_STATE] = 0;
+                gameScorePlus++;
+            }
+        } else if(ground[de]==0)continue;
+        ix[SHOT_STATE] = 0;
+    }
+    
+}
+static void check_bullet(void) {
+    // 弾のチェック
+    for(char b=bulletN,*ix=bullet;b;b--,ix+=BULLET_SIZE) {
+        if (ix[BULLET_STATE]==0)continue;
+        unsigned short de = ((unsigned short)(ix[BULLET_POSITION_YI]&0xf8))*4+(ix[BULLET_POSITION_XI]>>3);
+        if (ground[de]==0) {
+            if (ship[SHIP_TYPE]!=SHIP_TYPE_VICVIPER) continue;
+            signed short a = ((signed short)ship[SHIP_POSITION_X])-ix[BULLET_POSITION_XI];
+            if (a < -4 || 4 < a) continue;
+            a = ((signed short)ship[SHIP_POSITION_Y])-ix[BULLET_POSITION_YI];
+            if (a < -4 || 4 < a) continue;
+            //if (--ship[SHIP_HP]) break;
+            //break; // debug
+            ship[SHIP_TYPE] = SHIP_TYPE_BOMB;
+            ship[SHIP_STATE] = 0;
+        }
+        ix[BULLET_STATE] = 0;
+    }
+}
+static void check_ship(void) {
+    // 自機のチェック
+    if (ship[SHIP_TYPE] != SHIP_TYPE_VICVIPER) return;
+    unsigned short tmp = ((unsigned short)(ship[SHIP_POSITION_Y]&0xf8))*4+(ship[SHIP_POSITION_X]>>3);
+    if (enemyCollision[tmp]==0 && ground[tmp]==0) return;
+    //if(--ship[SHIP_HP]) return;
+    //return; // debug
+    ship[SHIP_TYPE] = SHIP_TYPE_BOMB;
+    ship[SHIP_STATE] = 0;
 }
 // ヒットチェックを行う
-static void GameHitCheck(void) __naked {
-    __asm;
-    // ショットのチェック
-    ld      ix, #_shot
-    ld      bc, #(SHOT_N << 8)
-    10$:
-        ld      a, SHOT_STATE(ix)
-        or      a
-        jr      z, 19$
-        ld      a, SHOT_POSITION_Y(ix)
-        and     #0xf8
-        ld      d, #0x00
-        add     a, a
-        rl      d
-        add     a, a
-        rl      d
-        ld      e, ENEMY_POSITION_X(ix)
-        srl     e
-        srl     e
-        srl     e
-        add     a, e
-        ld      e, a
-        ld      hl, #_enemyCollision
-        add     hl, de
-        ld      a, (hl)
-        or      a
-        jr      z, 11$
-            dec     a
-            add     a, a
-            add     a, a
-            add     a, a
-            add     a, a
-            ld      e, a
-            ld      d, #0x00
-            ld      iy, #_enemy
-            add     iy, de
-            dec     ENEMY_HP(iy)
-            jr      nz, 18$
-            ld      a, #ENEMY_TYPE_BOMB
-            ld      ENEMY_TYPE(iy), a
-            xor     a
-            ld      ENEMY_STATE(iy), a
-            inc     c
-            jr      18$
-        11$:
-            ld      hl, #_ground
-            add     hl, de
-            ld      a, (hl)
-            or      a
-            jr      z, 19$
-        18$:
-            xor     a
-            ld      SHOT_STATE(ix), a
-        19$:
-        ld      de, #SHOT_SIZE
-        add     ix, de
-    djnz    10$
-    // 加算されるスコアの設定
-    ld      a, c
-    ld      (_gameScorePlus), a
-    // 弾のチェック
-    ld      ix, #_bullet
-    ld      iy, #_ship
-    ld      a, (_bulletN)
-    ld      b, a
-    20$:
-        ld      a, BULLET_STATE(ix)
-        or      a
-        jr      z, 29$
-        ld      a, BULLET_POSITION_YI(ix)
-        and     #0xf8
-        ld      d, #0x00
-        add     a, a
-        rl      d
-        add     a, a
-        rl      d
-        ld      e, BULLET_POSITION_XI(ix)
-        srl     e
-        srl     e
-        srl     e
-        add     a, e
-        ld      e, a
-        ld      hl, #_ground
-        add     hl, de
-        ld      a, (hl)
-        or      a
-        jr      nz, 28$
-        ld      a, SHIP_TYPE(iy)
-        cp      #SHIP_TYPE_VICVIPER
-        jr      nz, 29$
-        ld      a, SHIP_POSITION_X(iy)
-        sub     BULLET_POSITION_XI(ix)
-        jr      c, 21$
-            cp      #0x04
-            jr      nc, 29$
-            jr      22$
-        21$:
-            cp      #0xfc
-            jr      c, 29$
-        22$:
-            ld      a, SHIP_POSITION_Y(iy)
-            sub     BULLET_POSITION_YI(ix)
-            jr      c, 23$
-            cp      #0x04
-            jr      nc, 29$
-            jr      24$
-        23$:
-            cp      #0xfc
-            jr      c, 29$
-        24$:
-            //dec     SHIP_HP(iy)
-            //jr      nz, 28$
-            jr      28$ // debug
-            ld      a, #SHIP_TYPE_BOMB
-            ld      SHIP_TYPE(iy), a
-            xor     a
-            ld      SHIP_STATE(iy), a
-        28$:
-            xor     a
-            ld      BULLET_STATE(ix), a
-        29$:
-        ld      de, #SHOT_SIZE
-        add     ix, de
-    djnz    20$
-    // 自機のチェック
-    ld      ix, #_ship
-    ld      a, SHIP_TYPE(ix)
-    cp      #SHIP_TYPE_VICVIPER
-    jr      nz, 39$
-    ld      a, SHIP_POSITION_Y(ix)
-    and     #0xf8
-    ld      d, #0x00
-    add     a, a
-    rl      d
-    add     a, a
-    rl      d
-    ld      e, SHIP_POSITION_X(ix)
-    srl     e
-    srl     e
-    srl     e
-    add     a, e
-    ld      e, a
-    ld      hl, #_enemyCollision
-    add     hl, de
-    ld      a, (hl)
-    or      a
-    jr      nz, 38$
-        ld      hl, #_ground
-        add     hl, de
-        ld      a, (hl)
-        or      a
-        jr      z, 39$
-    38$:
-        //dec     SHIP_HP(iy)
-        //jr      nz, 39$
-        jr 39$ // debug
-        ld      a, #SHIP_TYPE_BOMB
-        ld      SHIP_TYPE(iy), a
-        xor     a
-        ld      SHIP_STATE(iy), a
-    39$:
-    ret
-    __endasm;
+static void GameHitCheck(void) {
+    check_shot();// ショットのチェック
+    check_bullet();// 弾のチェック
+    check_ship();// 自機のチェック
 }
 // スコアを更新する
-static void GameUpdateScore(void) __naked {
-    __asm;
+static void GameUpdateScore(void) {
     // スコアの更新
-    ld      a, (_gameScorePlus)
-    or      a
-    jr      z, 09$
-        ld      hl, #(_gameScore + 0x0005)
-        ld      b, #0x06
-        00$:
-            add     a, (hl)
-            ld      (hl), a
-            sub     #0x0a
-            jr      c, 01$
-                ld      (hl), a
-                dec     hl
-                ld      a, #0x01
-            djnz    00$
-            ld      hl, #(_gameScore + 0x0000)
-            ld      de, #(_gameScore + 0x0001)
-            ld      bc, #0x0005
-            ld      a, #0x09
-            ld      (hl), a
-            ldir
-        01$:
-        ld      hl, #_gameScore
-        ld      de, #_appScore
-        ld      b, #0x06
-        02$:
-            ld      a, (de)
-            cp      (hl)
-            jr      c, 03$
-            jr      nz, 09$
-            inc     hl
-            inc     de
-        djnz    02$
-        jr      09$
-        03$:
-            ld      hl, #_gameScore
-            ld      de, #_appScore
-            ld      bc, #0x0006
-            ldir
-        09$:
+    if (gameScorePlus) {
+        char b=6;
+        for(char a = gameScorePlus,*hl = gameScore+5;b;hl--,a=1,b--) {
+            a += *hl;
+            *hl = a;
+            a -= 10;
+            if (a & 0x80) break;
+            *hl = a;
+        }
+        if(!b) for(char *de = gameScore,b=6;b;de++,b--) *de=9;
+        // 小さかったらコピる
+        for(char *hl = gameScore,*de = appScore,b=6;b;hl++,de++,b--) {
+            if (*de < *hl) break;
+            if (*de > *hl) {
+                for(;b;hl++,de++,b--) *de = *hl;
+                break;
+            }
+        }
+    }
     // 初期文字列の転送
-    ld      hl, #_gameScoreString
-    ld      de, #(_appPatternName + 0x0000)
-    ld      bc, #0x0020
-    ldir
+    for(char *hl = gameScoreString,*de = appPatternName,bc=0x20;bc;bc--)*de++=*hl++;
     // スコアの描画
-    ld      hl, #_gameScore
-    ld      de, #(_appPatternName + 0x0003)
-    ld      b, #0x06
-    10$:
-        ld      a, (hl)
-        or      a
-        jr      nz, 11$
-        inc     hl
-        inc     de
-    djnz    10$
-    jr      19$
-    11$:
-        ld      a, (hl)
-        add     a, #0x10
-        ld      (de), a
-        inc     hl
-        inc     de
-    djnz    11$
-    ld      a, #0x10
-    ld      (de), a
-    19$:
+    for(char *hl = gameScore,*de = appPatternName + 3,b = 6;b;hl++,de++,b--) {
+        if (*hl) {
+            for(;b;hl++,de++,b--) *de = *hl + 0x10;
+            *de=0x10;
+            break;
+        }
+    }
     // ハイスコアの描画
-    ld      hl, #_appScore
-    ld      de, #(_appPatternName + 0x000f)
-    ld      b, #0x06
-    20$:
-        ld      a, (hl)
-        or      a
-        jr      nz, 21$
-            inc     hl
-            inc     de
-        djnz    20$
-        jr      29$
-        21$:
-            ld      a, (hl)
-            add     a, #0x10
-            ld      (de), a
-            inc     hl
-            inc     de
-        djnz    21$
-        ld      a, #0x10
-        ld      (de), a
-    29$:
+    for(char *hl = appScore,*de = appPatternName + 0xf,b = 6;b;hl++,de++,b--) {
+        if (*hl) {
+            for(;b;hl++,de++,b--) *de = *hl +0x10;
+            *de=0x10;
+            break;
+        }
+    }
     // 速度の描画
-    ld      a, (_ship + SHIP_SPEED)
-    add     a, a
-    ld      e, a
-    ld      d, #0x00
-    ld      hl, #_gameSpeedString
-    add     hl, de
-    ld      de, #(_appPatternName + 0x1d)
-    ld      bc, #0x0002
-    ldir
-    ret
-    __endasm;
+    for(char *hl = &gameSpeedString[ship[SHIP_SPEED]*2],*de = &appPatternName[0x1d],bc=2;bc;bc--)*de++=*hl++;
 }

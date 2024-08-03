@@ -191,7 +191,7 @@ static char const soundLengthTable[] = {
     1,       //
     1,       //
 };
-static short const soundEnvelopeTable[] = {
+static unsigned short const soundEnvelopeTable[] = {
     0,    128,   256,   512,  1024,  2048,  4096,  8192, 16384, 32768,
 };
 static char const soundNoiseTable[] = {
@@ -258,7 +258,7 @@ char videoPort[2];// ビデオ
 char videoRegister[8];
 char videoTransfer[VIDEO_TRANSFER_VRAM_SIZE * VIDEO_TRANSFER_SIZE];
 char sprite[128];// スプライト
-char soundRequest[8];// サウンド
+char* soundRequest[4];// サウンド
 char soundHead[8];
 char soundPlay[8];
 static char soundS;
