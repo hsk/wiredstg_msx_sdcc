@@ -70,7 +70,7 @@ void EnemyBigCoreUpdateCore(char* ix);
 void EnemyBigCoreUpdateBody(char* ix);
 void EnemyBigCoreRender(char* ix);
 void EnemyBigCoreBodyRender(char* ix);
-void EnemyBeamGenerate(char* hl);
+void EnemyBeamGenerate(short hl);
 void EnemyBeamUpdate(char* ix);
 void EnemyBeamRender(char* ix);
 // 外部変数宣言
