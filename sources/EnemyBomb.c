@@ -10,10 +10,7 @@
 // ＳＥ
 static char const enemyBombSe[] = "T1V15L0O4GFEDCO3BAG";
 // 敵を生成する
-void EnemyBombGenerate(void) __naked {
-    __asm;
-    ret
-    __endasm;
+void EnemyBombGenerate(void) {
 }
 // 敵を更新する
 void EnemyBombUpdate(char* ix) __naked {
@@ -63,73 +60,21 @@ void EnemyBombUpdate(char* ix) __naked {
     __endasm;
 }
 // 敵を描画する
-void EnemyBombRender(char* ix) __naked {
-    ix;
-    __asm;
-    push ix
-    push hl
-    pop ix
+void EnemyBombRender(char* ix) {
     // クリッピングの取得
-    ld      c, #0b00001111
-    ld      a, ENEMY_POSITION_Y(ix)
-    cp      #0x08
-    jr      nc, 00$
-        res     #0, c
-        res     #1, c
-    00$:
-    cp      #0xc0
-    jr      c, 01$
-        res     #2, c
-        res     #3, c
-    01$:
-    ld      a, ENEMY_POSITION_X(ix)
-    cp      #0x08
-    jr      nc, 02$
-        res     #0, c
-        res     #2, c
-    02$:
+    char c = 0b00001111;
+    if (ix[ENEMY_POSITION_Y]<8) c &= ~((1<<0)|(1<<1));
+    if (ix[ENEMY_POSITION_Y]>=0xc0) c &= ~((1<<2)|(1<<3));
+    if (ix[ENEMY_POSITION_X]<8) c &= ~((1<<0)|(1<<2));
     // パターンを置く
-    ld      a, ENEMY_POSITION_Y(ix)
-    and     #0xf8
-    ld      d, #0x00
-    add     a, a
-    rl      d
-    add     a, a
-    rl      d
-    ld      e, ENEMY_POSITION_X(ix)
-    srl     e
-    srl     e
-    srl     e
-    add     a, e
-    ld      e, a
-    ld      hl, #(_appPatternName - 0x0021)
-    add     hl, de
-    ld      a, ENEMY_ANIMATION(ix)
-    ld      b, ENEMY_INDEX(ix)
-    rr      c
-    jr      nc, 10$
-        ld      (hl), a
-    10$:
-    inc     hl
-    inc     a
-    rr      c
-    jr      nc, 11$
-        ld      (hl), a
-    11$:
-    ld      de, #0x001f
-    add     hl, de
-    add     a, #0x0f
-    rr      c
-    jr      nc, 12$
-        ld      (hl), a
-    12$:
-    inc     hl
-    inc     a
-    rr      c
-    jr      nc, 13$
-        ld      (hl), a
-    13$:
-    pop ix
-    ret
-    __endasm;
+    short de = (ix[ENEMY_POSITION_Y]&0xf8)*4 + (ix[ENEMY_POSITION_X] >> 3);
+    char* hl = appPatternName - 0x0021 + de;
+    char a = ix[ENEMY_ANIMATION];
+    if (c&1) { *hl = a; } c=c>>1;
+    hl++;a++;
+    if (c&1) { *hl = a; } c=c>>1;
+    hl+= 0x1f;a+= 0xf;
+    if (c&1) { *hl = a;} c=c>>1;
+    hl++;a++;
+    if (c&1) { *hl = a;}
 }

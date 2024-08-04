@@ -1,4 +1,5 @@
 // EnemyRugal.c : 敵／ルグル
+// よってくるやつ
 #include "bios.h"
 #include "vdp.h"
 #include "System.h"
@@ -8,70 +9,36 @@
 #include "Enemy.h"
 #include "Bullet.h"
 // 敵を生成する
-void EnemyRugalGenerate(void) __naked {
-    __asm;
-    // ジェネレータの取得
-    ld      iy, #_enemyGenerator
+void EnemyRugalGenerate(void) {
+    char* iy = enemyGenerator;
+    #if 1
+    iy[ENEMY_GENERATOR_TYPE] = 0;
+    iy[ENEMY_GENERATOR_STATE] = 0;
+    return;
+    #endif
     // 初期化の開始
-    ld      a, ENEMY_GENERATOR_STATE(iy)
-    or      a
-    jr      nz, 09$
-        // 生成数の設定
-        ld      a, #0x03
-        ld      ENEMY_GENERATOR_LENGTH(iy), a
-        // タイマの設定
-        ld      a, #0x01
-        ld      ENEMY_GENERATOR_TIMER(iy), a
+    if (iy[ENEMY_GENERATOR_STATE] == 0) {
+        iy[ENEMY_GENERATOR_LENGTH] = 3;// 生成数の設定
+        iy[ENEMY_GENERATOR_TIMER] = 1;// タイマの設定
         // パラメータの設定
-        ld      a, ENEMY_GENERATOR_TYPE(iy)
-        cp      #ENEMY_TYPE_RUGAL_BACK
-        ld      a, #0xff
-        adc     a, #0x00
-        ld      ENEMY_GENERATOR_PARAM_0(iy), a
-        // 初期化の完了
-        inc     ENEMY_GENERATOR_STATE(iy)
-    09$:
-    // タイマの更新
-    dec     ENEMY_GENERATOR_TIMER(iy)
-    jr      nz, 19$
-        ld      a, #0x10
-        ld      ENEMY_GENERATOR_TIMER(iy), a
-        // 生成の開始
-        call    _EnemyGetEmpty
-        ld a,d
-        or e
-        jr      z, 19$
-        push de
-        pop ix
-            // 敵の生成
-            ld      a, ENEMY_GENERATOR_TYPE(iy)
-            ld      ENEMY_TYPE(ix), a
-            xor     a
-            ld      ENEMY_STATE(ix), a
-            ld      a, ENEMY_GENERATOR_PARAM_0(iy)
-            ld      ENEMY_POSITION_X(ix), a
-            call    _SystemGetRandom
-            and     #0x07
-            add     a, a
-            add     a, a
-            add     a, a
-            ld      c, a
-            add     a, a
-            add     a, c
-            add     a, #0x20
-            ld      ENEMY_POSITION_Y(ix), a
-            ld      a, #0x01
-            ld      ENEMY_HP(ix), a
-            // 生成数の更新
-            dec     ENEMY_GENERATOR_LENGTH(iy)
-            jr      nz, 19$
-                // 生成の完了
-                xor     a
-                ld      ENEMY_GENERATOR_TYPE(iy), a
-                ld      ENEMY_GENERATOR_STATE(iy), a
-    19$:
-    ret
-    __endasm;
+        iy[ENEMY_GENERATOR_PARAM_0] = (iy[ENEMY_GENERATOR_TYPE] == ENEMY_TYPE_RUGAL_BACK) ? 0xff : 0;
+        iy[ENEMY_GENERATOR_STATE]++;// 初期化の完了
+    }
+    if (--iy[ENEMY_GENERATOR_TIMER]) return;// タイマの更新
+    iy[ENEMY_GENERATOR_TIMER] = 0x10;
+    char* ix = EnemyGetEmpty();
+    if(ix==0)return;
+    ix[ENEMY_TYPE] = iy[ENEMY_GENERATOR_TYPE];// 敵の生成
+    ix[ENEMY_STATE] = 0;
+    ix[ENEMY_POSITION_X] = iy[ENEMY_GENERATOR_PARAM_0];
+    char c = ((SystemGetRandom()&7)<<3);
+    ix[ENEMY_POSITION_Y] = (c<<1)+c+0x20;
+    ix[ENEMY_HP] = 0x01;
+    // 生成数の更新
+    if(--iy[ENEMY_GENERATOR_LENGTH]) return;
+    // 生成の完了
+    iy[ENEMY_GENERATOR_TYPE] = 0;
+    iy[ENEMY_GENERATOR_STATE] = 0;
 }
 // 敵を更新する
 void EnemyRugalUpdate(char* ix) __naked {

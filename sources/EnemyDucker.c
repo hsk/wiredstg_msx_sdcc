@@ -9,67 +9,39 @@
 #include "Enemy.h"
 #include "Bullet.h"
 // 敵を生成する
-void EnemyDuckerGenerate(void) __naked {
-    __asm;
-    // レジスタの保存
-    // ジェネレータの取得
-    ld      iy, #_enemyGenerator
-    // do {
+void EnemyDuckerGenerate(void) {
+    char* iy = enemyGenerator;// ジェネレータの取得
+    #if 1
+    iy[ENEMY_GENERATOR_TYPE] = 0;
+    iy[ENEMY_GENERATOR_STATE] = 0;
+    return;
+    #endif
+    do {
         // 初期化の開始
-        ld      a, ENEMY_GENERATOR_STATE(iy)
-        or      a
-        jr      nz, 09$
-            // 地面のチェック
-            ld      a, (_ground + 0x003f)
-            or      a
-            jr      z, 18$ // break;
-            // 生成数の設定
-            ld      a, #0x01
-            ld      ENEMY_GENERATOR_LENGTH(iy), a
-            // タイマの設定
-            ld      a, #0x01
-            ld      ENEMY_GENERATOR_TIMER(iy), a
-            // 初期化の完了
-            inc     ENEMY_GENERATOR_STATE(iy)
-        09$:
-        // スクロールの監視
-        ld      a, (_gameScroll)
-        or      a
-        ret     nz
-        // タイマの更新
-        dec     ENEMY_GENERATOR_TIMER(iy)
-        ret     nz
-        ld      a, #0x20
-        ld      ENEMY_GENERATOR_TIMER(iy), a
+        if (iy[ENEMY_GENERATOR_STATE]==0) {
+            if (ground[0x003f]==0) break;// 地面のチェック
+            iy[ENEMY_GENERATOR_LENGTH] = 0x01;// 生成数の設定
+            iy[ENEMY_GENERATOR_TIMER] = 0x01;// タイマの設定
+            iy[ENEMY_GENERATOR_STATE]++;// 初期化の完了
+        }
+        if (gameScroll!=0) return;// スクロールの監視
+        if (--iy[ENEMY_GENERATOR_TIMER]) return;// タイマの更新
+        iy[ENEMY_GENERATOR_TIMER] = 0x20;
         // 生成の開始
-        call    _EnemyGetEmpty
-        ld a,d
-        or e
-        ret z
-        push de
-        pop ix
+        char* ix = EnemyGetEmpty();
+        if (ix==0) return;
         // 敵の生成
-        ld      a, ENEMY_GENERATOR_TYPE(iy)
-        ld      ENEMY_TYPE(ix), a
-        xor     a
-        ld      ENEMY_STATE(ix), a
-        call    _SystemGetRandom
-        cp      #0x40
-        ld      a, #0x00
-        sbc     #0x00
-        ld      ENEMY_POSITION_X(ix), a
-        ld      a, #0x01
-        ld      ENEMY_HP(ix), a
-        // 生成数の更新
-        dec     ENEMY_GENERATOR_LENGTH(iy)
-        ret      nz
+        ix[ENEMY_TYPE] = iy[ENEMY_GENERATOR_TYPE];
+        ix[ENEMY_STATE] = 0;
+        char a = SystemGetRandom();
+        if (a < 0x40) a = 0; else a = 255;
+        ix[ENEMY_POSITION_X] = a;
+        ix[ENEMY_HP] = 1;
+        if(--iy[ENEMY_GENERATOR_LENGTH])return;// 生成数の更新
         // 生成の完了
-    18$: // } while(0);
-    xor     a
-    ld      ENEMY_GENERATOR_TYPE(iy), a
-    ld      ENEMY_GENERATOR_STATE(iy), a
-    ret
-    __endasm;
+    } while(0);
+    iy[ENEMY_GENERATOR_TYPE] = 0;
+    iy[ENEMY_GENERATOR_STATE] = 0;
 }
 // 敵を更新する
 void EnemyDuckerUpdate(char* ix) __naked {

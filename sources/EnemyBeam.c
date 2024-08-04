@@ -6,7 +6,7 @@
 #include "Game.h"
 #include "Enemy.h"
 // 敵を生成する
-void EnemyBeamGenerate(short hl) __naked {
+void EnemyBeamGenerate(short hl) {
     // 敵の生成
     char *ix = EnemyGetEmpty();
     if (ix==0) return;

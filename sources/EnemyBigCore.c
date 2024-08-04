@@ -36,56 +36,23 @@ static char const enemyBigCoreSeBomb[] =
     "O3GO2D-O3EO2D-O3CO2D-O2GD-ED-"
     "O2CO1D-O2D-O1CO2CO1D-O2D-O1CO2CO1D-O2D-O1CO2CO1D-O2D-O1C";
 // 敵を生成する
-void EnemyBigCoreGenerate(void) __naked {
-    __asm;
-    // ジェネレータの取得
-    ld      iy, #_enemyGenerator
+void EnemyBigCoreGenerate(void) {
     // 敵の生成／コア
-    call    _EnemyGetEmpty
-    push de
-    pop ix
-
-    //   jr      c, 09$
-    ld      a, #ENEMY_TYPE_BIGCORE_CORE
-    ld      ENEMY_TYPE(ix), a
-    xor     a
-    ld      ENEMY_STATE(ix), a
-    ld      a, #0xa0
-    ld      ENEMY_POSITION_X(ix), a
-    ld      a, #0xe0
-    ld      ENEMY_POSITION_Y(ix), a
-    ld      a, #0xe
-    ld      ENEMY_HP(ix), a
-    ld      ENEMY_PARAM_0(ix), a
-    // コアの保存
-    push    ix
+    char* ix = EnemyGetEmpty();
+    ix[ENEMY_TYPE] = ENEMY_TYPE_BIGCORE_CORE;
+    ix[ENEMY_STATE] = 0;
+    ix[ENEMY_POSITION_X] = 0xa0;
+    ix[ENEMY_POSITION_Y] = 0xe0;
+    ix[ENEMY_HP] = 0x0e;
+    ix[ENEMY_PARAM_0] =0x0e;
     // 敵の生成／ボディ
-    call    _EnemyGetEmpty
-    push de
-    pop ix
-
-    //   jr      c, 09$
-    ld      a, #ENEMY_TYPE_BIGCORE_BODY
-    ld      ENEMY_TYPE(ix), a
-    xor     a
-    ld      ENEMY_STATE(ix), a
-    //   ld      a, #0xa0
-    //   ld      ENEMY_POSITION_X(ix), a
-    //   ld      a, #0xe0
-    //   ld      ENEMY_POSITION_Y(ix), a
-    ld      a, #0xff
-    ld      ENEMY_HP(ix), a
-    // コアの参照の取得
-    pop     hl
-    ld      ENEMY_PARAM_0(ix), l
-    ld      ENEMY_PARAM_1(ix), h
-    // 生成の完了
-    xor     a
-    ld      ENEMY_GENERATOR_TYPE(iy), a
-    ld      ENEMY_GENERATOR_STATE(iy), a
-    // 終了
-    ret
-    __endasm;
+    char* body = EnemyGetEmpty();
+    *(char**)&body[ENEMY_PARAM_0]=ix;
+    body[ENEMY_TYPE] = ENEMY_TYPE_BIGCORE_BODY;
+    body[ENEMY_STATE] = 0;
+    body[ENEMY_HP] = 0xff;
+    enemyGenerator[ENEMY_GENERATOR_TYPE] = 0;// 生成の完了
+    enemyGenerator[ENEMY_GENERATOR_STATE] = 0;
 }
 // 敵を更新する／コア
 void EnemyBigCoreUpdateCore(char* ix) __naked {
@@ -275,142 +242,57 @@ void EnemyBigCoreUpdateBody(char* ix) __naked {
     ret
     __endasm;
 }
+short get_core_pos(char*ix){
+    return (((short)(ix[ENEMY_POSITION_Y]&0xf8))<<2) +
+               (ix[ENEMY_POSITION_X]>>3) - 6;
+}
 // 敵を描画する／コア
-void EnemyBigCoreRender(char* ix) __naked {
-    ix;
-    __asm;
-    push ix
-    push iy
-    push hl
-    pop ix
+void EnemyBigCoreRender(char* ix) {
     // 位置の取得
-    ld      a, ENEMY_POSITION_Y(ix)
-    and     #0xf8
-    ld      b, #0x00
-    add     a, a
-    rl      b
-    add     a, a
-    rl      b
-    ld      c, ENEMY_POSITION_X(ix)
-    srl     c
-    srl     c
-    srl     c
-    add     a, c
-    sub     #0x06
-    ld      c, a
+    short bc = get_core_pos(ix);
     // パターンを置く
-    ld      a, ENEMY_POSITION_Y(ix)
-    cp      #0xc0
-    jr      nc, 19$
-        ld      hl, #_appPatternName
-        add     hl, bc
-        ex      de, hl
-        ld      iy, #_enemyCollision
-        add     iy, bc
-        ld      a, ENEMY_HP(ix)
-        add     a, #0x01
-        rla
-        rla
-        rla
-        and     #0xf0
-        ld      c, a
-        ld      b, #0x00
-        ld      hl, #_enemyBigCoreCorePatternName
-        add     hl, bc
-        ld      c, ENEMY_INDEX(ix)
-        ld      b, #0x0c
-    10$:
-        ld      a, (hl)
-        or      a
-        jr      z, 11$
-        ld      (de), a
-        ld      0(iy), c
-    11$:
-        inc     hl
-        inc     de
-        inc     iy
-        djnz    10$
-    19$:
-    pop iy
-    pop ix
-    ret
-    __endasm;
+    if(ix[ENEMY_POSITION_Y]>=0xc0) return;
+    char* de = appPatternName + bc;
+    char* iy = enemyCollision + bc;
+    char* hl = enemyBigCoreCorePatternName+(((ix[ENEMY_HP] + 1)<<3)&0xf0);
+    for (char b=0x0c;b;de++,iy++,--b){
+        char a = *hl++;
+        if (a) {
+            *de = a;
+            *iy = ix[ENEMY_INDEX];
+        }
+    }
 }
 // 敵を描画する／ボディ
-void EnemyBigCoreBodyRender(char* ix) __naked {
-    ix;
-    __asm;
-    push ix
-    push iy
-    push hl
-    pop ix
-    // 位置の取得
-    ld      a, ENEMY_POSITION_Y(ix)
-    sub     #0x20
-    and     #0xf8
-    ld      b, #0x00
-    add     a, a
-    rl      b
-    add     a, a
-    rl      b
-    ld      c, ENEMY_POSITION_X(ix)
-    srl     c
-    srl     c
-    srl     c
-    add     a, c
-    sub     #0x06
-    ld      c, a
+short get_body_pos(char*ix){
+    return (((short)((ix[ENEMY_POSITION_Y]-0x20)&0xf8))<<2) +
+               (ix[ENEMY_POSITION_X]>>3) - 6;
+}
+void EnemyBigCoreBodyRender(char* ix) {
     // パターンを置く
-    ld      hl, #_appPatternName
-    add     hl, bc
-    ex      de, hl
-    ld      iy, #_enemyCollision
-    add     iy, bc
-    ld      hl, #_enemyBigCoreBodyPatternName
-    ld      c, ENEMY_INDEX(ix)
-    ld      b, ENEMY_POSITION_Y(ix)
-    srl     b
-    srl     b
-    srl     b
-    ld      a, #0x1b
-    sub     b
-    jr      c, 19$
-    inc     a
-    cp      #0x09
-    jr      c, 10$
-        ld      a, #0x09
-    10$:
-        ld      b, a
-    11$:
-        push    bc
-        ld      b, ENEMY_ANIMATION(ix)
-    12$:
-        ld      a, (hl)
-        or      a
-        jr      z, 13$
-        ld      (de), a
-        ld      0(iy), c
-    13$:
-        inc     hl
-        inc     de
-        inc     iy
-        djnz    12$
-        ld      a, #0x0c
-        sub     ENEMY_ANIMATION(ix)
-        ld      c, a
-    //   ld      b, #0x00
-        add     hl, bc
-        add     a, #0x14
-        ld      c, a
-        ex      de, hl
-        add     hl, bc
-        ex      de, hl
-        add     iy, bc
-        pop     bc
-        djnz    11$
-    19$:
-    pop iy
-    pop ix
-    ret
-    __endasm;
+    signed char b1 = 0x1b - (ix[ENEMY_POSITION_Y]>>3);
+    if (b1<0) return;
+    b1++;
+    if (b1 > 9) b1 = 9;
+    // 位置の取得
+    short bc = get_body_pos(ix);
+    {
+        char* de = appPatternName + bc;
+        char* iy = enemyCollision + bc;
+        char* hl = enemyBigCoreBodyPatternName;
+        for(;b1;b1--){
+            for(char b = ix[ENEMY_ANIMATION];b;de++,iy++,--b) {
+                char a = *hl++;
+                if (a) {
+                    *de = a;
+                    *iy = ix[ENEMY_INDEX];
+                }
+            }
+            char a = 12 - ix[ENEMY_ANIMATION];
+            hl += a;
+            a += (32-12);
+            de += a;
+            iy += a;
+        }
+    }
 }

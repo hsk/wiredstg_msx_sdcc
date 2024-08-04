@@ -25,65 +25,31 @@ static char const enemyGarunAnimation[] = {
     0xa0, 0xa2, 0xa4, 0xa2,
 };
 // 敵を生成する
-void EnemyGarunGenerate(void) __naked {
-    __asm;
-    // ジェネレータの取得
-    ld      iy, #_enemyGenerator
+void EnemyGarunGenerate(void) {
+    char* iy = enemyGenerator;
+    #if 1
+    iy[ENEMY_GENERATOR_TYPE] = 0;
+    iy[ENEMY_GENERATOR_STATE] = 0;
+    return;
+    #endif
     // 初期化の開始
-    ld      a, ENEMY_GENERATOR_STATE(iy)
-    or      a
-    jr      nz, 09$
-        // 生成数の設定
-        ld      a, #0x04
-        ld      ENEMY_GENERATOR_LENGTH(iy), a
-        // タイマの設定
-        ld      a, #0x01
-        ld      ENEMY_GENERATOR_TIMER(iy), a
-        // 初期化の完了
-        inc     ENEMY_GENERATOR_STATE(iy)
-    09$:
-    // タイマの更新
-    dec     ENEMY_GENERATOR_TIMER(iy)
-    ret     nz
-    ld      a, #0x10
-    ld      ENEMY_GENERATOR_TIMER(iy), a
-    // 生成の開始
-    call    _EnemyGetEmpty
-    ld a,d
-    or e
-    ret     z
-    push de
-    pop ix
-    // 敵の生成
-    ld      a, ENEMY_GENERATOR_TYPE(iy)
-    ld      ENEMY_TYPE(ix), a
-    xor     a
-    ld      ENEMY_STATE(ix), a
-    ld      a, ENEMY_TYPE(ix)
-    cp      #ENEMY_TYPE_GARUN_BACK
-    ld      a, #0xff
-    adc     a, #0x00
-    ld      ENEMY_POSITION_X(ix), a
-    call    _SystemGetRandom
-    and     #0x03
-    add     a, a
-    add     a, a
-    add     a, a
-    add     a, a
-    add     a, a
-    add     a, #0x30
-    ld      ENEMY_POSITION_Y(ix), a
-    ld      a, #0x01
-    ld      ENEMY_HP(ix), a
-    // 生成数の更新
-    dec     ENEMY_GENERATOR_LENGTH(iy)
-    ret     nz
-    // 生成の完了
-    xor     a
-    ld      ENEMY_GENERATOR_TYPE(iy), a
-    ld      ENEMY_GENERATOR_STATE(iy), a
-    ret
-    __endasm;
+    if (iy[ENEMY_GENERATOR_STATE] == 0) {
+        iy[ENEMY_GENERATOR_LENGTH] = 4;// 生成数の設定
+        iy[ENEMY_GENERATOR_TIMER] = 1;// タイマの設定
+        iy[ENEMY_GENERATOR_STATE]++;// 初期化の完了
+    }
+    if (--iy[ENEMY_GENERATOR_TIMER]) return;// タイマの更新
+    iy[ENEMY_GENERATOR_TIMER] = 0x10;
+    char* ix = EnemyGetEmpty();
+    if(ix==0)return;
+    ix[ENEMY_TYPE] = iy[ENEMY_GENERATOR_TYPE];// 敵の生成
+    ix[ENEMY_STATE] = 0;
+    ix[ENEMY_POSITION_X] = (ix[ENEMY_TYPE]==ENEMY_TYPE_GARUN_BACK) ? 0xff : 0;
+    ix[ENEMY_POSITION_Y] = ((SystemGetRandom()&3)<<5)+0x30;
+    ix[ENEMY_HP] = 0x01;
+    if(--iy[ENEMY_GENERATOR_LENGTH])return;// 生成数の更新
+    iy[ENEMY_GENERATOR_TYPE] = 0;
+    iy[ENEMY_GENERATOR_STATE] = 0;
 }
 // 敵を更新する
 void EnemyGarunUpdate(char* ix) __naked {

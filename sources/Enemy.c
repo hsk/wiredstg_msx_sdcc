@@ -142,6 +142,7 @@ static void fpcall0(FP fp) {
 static void fpcall1(FP fp,char* ix) {
     ix;fp;
     __asm;
+    push iy// todo
     push ix
     ex de,hl
     push de
@@ -151,6 +152,7 @@ static void fpcall1(FP fp,char* ix) {
     jp (ix)
     11$:
     pop ix
+    pop iy
     ret
     __endasm;
 }
@@ -308,5 +310,5 @@ static void EnemyPutPattern16x16(char* ix) {
     hl+= 0x1f; iy+= 0x1f; a+= 0xf;
     if (c&1) { *hl = a; *iy = b; } c=c>>1;
     hl++;iy++;a++;
-    if (c&1) { *hl = a; *iy = b; } c=c>>1;
+    if (c&1) { *hl = a; *iy = b; }
 }

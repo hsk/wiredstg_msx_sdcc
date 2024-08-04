@@ -9,88 +9,47 @@
 #include "Enemy.h"
 #include "Bullet.h"
 // 敵を生成する
-void EnemyDee01Generate(void) __naked {
-    __asm;
-    // ジェネレータの取得
-    ld      iy, #_enemyGenerator
-    // 初期化の開始
-    ld      a, ENEMY_GENERATOR_STATE(iy)
-    or      a
-    jr      nz, 09$
-        // 地面のチェック
-        ld      a, ENEMY_GENERATOR_TYPE(iy)
-        cp      #ENEMY_TYPE_DEE01_UPPER
-        jr      nz, 00$
-            ld      a, (_groundGenerator + GROUND_GENERATOR_UPPER_STATE)
-            cp      #GROUND_GENERATOR_STATE_FLAT
-            jr      nz, 18$
-            ld      a, (_groundGenerator + GROUND_GENERATOR_UPPER_LENGTH)
-            cp      #0x08
-            jr      c, 18$
-            jr      01$
-        00$:
-            ld      a, (_groundGenerator + GROUND_GENERATOR_LOWER_STATE)
-            cp      #GROUND_GENERATOR_STATE_FLAT
-            jr      nz, 18$
-            ld      a, (_groundGenerator + GROUND_GENERATOR_LOWER_LENGTH)
-            cp      #0x08
-            jr      c, 18$
-        01$:
+void EnemyDee01Generate(void) {
+    char* iy = enemyGenerator;
+    do {
+        #if 0
+        iy[ENEMY_GENERATOR_TYPE] = 0;
+        iy[ENEMY_GENERATOR_STATE] = 0;
+        return;
+        #endif
+        // 初期化の開始
+        if (iy[ENEMY_GENERATOR_STATE] == 0) {
+            // 地面のチェック
+            if (iy[ENEMY_GENERATOR_TYPE]==ENEMY_TYPE_DEE01_UPPER){
+                if (groundGenerator[GROUND_GENERATOR_UPPER_STATE]!=GROUND_GENERATOR_STATE_FLAT) break;
+                if (groundGenerator[GROUND_GENERATOR_UPPER_LENGTH]<8) break;
+            } else {
+                if (groundGenerator[GROUND_GENERATOR_LOWER_STATE]!=GROUND_GENERATOR_STATE_FLAT) break;
+                if (groundGenerator[GROUND_GENERATOR_LOWER_LENGTH]<8) break;
+            }
             // 生成数の設定
-            call    _SystemGetRandom
-            and     #0x03
-            jr      nz, 02$
-                inc     a
-            02$:
-            ld      ENEMY_GENERATOR_LENGTH(iy), a
-            // タイマの設定
-            ld      a, #0x02
-            ld      ENEMY_GENERATOR_TIMER(iy), a
-            // 初期化の完了
-            inc     ENEMY_GENERATOR_STATE(iy)
-    09$:
-        // スクロールの監視
-        ld      a, (_gameScroll)
-        or      a
-        jr      nz, 19$
-        // タイマの更新
-        dec     ENEMY_GENERATOR_TIMER(iy)
-        jr      nz, 19$
-        ld      a, #0x02
-        ld      ENEMY_GENERATOR_TIMER(iy), a
+            char a = (SystemGetRandom()&3);
+            if(a==0)a++;
+            iy[ENEMY_GENERATOR_LENGTH] = a;// 生成数の設定
+            iy[ENEMY_GENERATOR_TIMER] = 2;// タイマの設定
+            iy[ENEMY_GENERATOR_STATE]++;// 初期化の完了
+        }
+        if (gameScroll!=0) return;// スクロールの監視
+        if (--iy[ENEMY_GENERATOR_TIMER]) return;// タイマの更新
+        iy[ENEMY_GENERATOR_TIMER] = 0x2;
         // 生成の開始
-        call    _EnemyGetEmpty
-        ld a,d
-        or e
-        jr      z, 19$
-        push de
-        pop ix
+        char* ix = EnemyGetEmpty();
+        if (ix==0) return;
         // 敵の生成
-        ld      a, ENEMY_GENERATOR_TYPE(iy)
-        ld      ENEMY_TYPE(ix), a
-        xor     a
-        ld      ENEMY_STATE(ix), a
-        ld      ENEMY_POSITION_X(ix), a
-        ld      a, ENEMY_TYPE(ix)
-        cp      #ENEMY_TYPE_DEE01_UPPER
-        ld      a, #0x18
-        jr      z, 10$
-            ld      a, #0xb0
-        10$:
-        ld      ENEMY_POSITION_Y(ix), a
-        ld      a, #0x01
-        ld      ENEMY_HP(ix), a
-        // 生成数の更新
-        dec     ENEMY_GENERATOR_LENGTH(iy)
-        jr      nz, 19$
-        // 生成の完了
-    18$:
-        xor     a
-        ld      ENEMY_GENERATOR_TYPE(iy), a
-        ld      ENEMY_GENERATOR_STATE(iy), a
-    19$:
-    ret
-    __endasm;
+        ix[ENEMY_TYPE] = iy[ENEMY_GENERATOR_TYPE];
+        ix[ENEMY_STATE] = 0;
+        ix[ENEMY_POSITION_X] = 0;
+        ix[ENEMY_POSITION_Y] = (ix[ENEMY_TYPE] == ENEMY_TYPE_DEE01_UPPER) ? 0x18 : 0xb0;
+        ix[ENEMY_HP] = 1;
+        if(--iy[ENEMY_GENERATOR_LENGTH])return;// 生成数の更新
+    } while(0);
+    iy[ENEMY_GENERATOR_TYPE] = 0;
+    iy[ENEMY_GENERATOR_STATE] = 0;
 }
 // 敵を更新する
 void EnemyDee01Update(char* ix) __naked {

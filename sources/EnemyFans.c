@@ -8,70 +8,39 @@
 #include "Enemy.h"
 #include "Bullet.h"
 // 敵を生成する
-void EnemyFansGenerate(void) __naked {
-    __asm;
-    // ジェネレータの取得
-    ld      iy, #_enemyGenerator
+void EnemyFansGenerate(void) {
+    char *iy = enemyGenerator;
+    #if 1
+    iy[ENEMY_GENERATOR_TYPE] = 0;
+    iy[ENEMY_GENERATOR_STATE] = 0;
+    return;
+    #endif
     // 初期化の開始
-    ld      a, ENEMY_GENERATOR_STATE(iy)
-    or      a
-    jr      nz, 09$
+    if (iy[ENEMY_GENERATOR_STATE] == 0) {
         // 生成数の設定
-        call    _SystemGetRandom
-        and     #0x01
-        add     a, a
-        add     a, #0x04
-        ld      ENEMY_GENERATOR_LENGTH(iy), a
+        iy[ENEMY_GENERATOR_LENGTH] = (SystemGetRandom()&1)*2+4;
         // タイマの設定
-        ld      a, #0x01
-        ld      ENEMY_GENERATOR_TIMER(iy), a
+        iy[ENEMY_GENERATOR_TIMER] = 1;
         // パラメータの設定
-        ld      a, ENEMY_GENERATOR_TYPE(iy)
-        cp      #ENEMY_TYPE_FANS_BACK
-        ld      a, #0xff
-        adc     a, #0x00
-        ld      ENEMY_GENERATOR_PARAM_0(iy), a
-        call    _SystemGetRandom
-        and     #0x80
-        add     a, #0x20
-        ld      ENEMY_GENERATOR_PARAM_1(iy), a
-        // 初期化の完了
-        inc     ENEMY_GENERATOR_STATE(iy)
-    09$:
+        iy[ENEMY_GENERATOR_PARAM_0] = (iy[ENEMY_GENERATOR_TYPE] == ENEMY_TYPE_FANS_BACK) ? 0xff : 0;
+        iy[ENEMY_GENERATOR_PARAM_1] = (SystemGetRandom()&0x80)+0x20;
+        iy[ENEMY_GENERATOR_STATE]++;// 初期化の完了
+    }
     // タイマの更新
-    dec     ENEMY_GENERATOR_TIMER(iy)
-    jr      nz, 19$
-        ld      a, #0x04
-        ld      ENEMY_GENERATOR_TIMER(iy), a
-        // 生成の開始
-        call    _EnemyGetEmpty
-        ld a,d
-        or e
-        jr      z, 19$
-        push de
-        pop ix
-
-            // 敵の生成
-            ld      a, ENEMY_GENERATOR_TYPE(iy)
-            ld      ENEMY_TYPE(ix), a
-            xor     a
-            ld      ENEMY_STATE(ix), a
-            ld      a, ENEMY_GENERATOR_PARAM_0(iy)
-            ld      ENEMY_POSITION_X(ix), a
-            ld      a, ENEMY_GENERATOR_PARAM_1(iy)
-            ld      ENEMY_POSITION_Y(ix), a
-            ld      a, #0x01
-            ld      ENEMY_HP(ix), a
-            // 生成数の更新
-            dec     ENEMY_GENERATOR_LENGTH(iy)
-            jr      nz, 19$
-                // 生成の完了
-                xor     a
-                ld      ENEMY_GENERATOR_TYPE(iy), a
-                ld      ENEMY_GENERATOR_STATE(iy), a
-    19$:
-    ret
-    __endasm;
+    if(--iy[ENEMY_GENERATOR_TIMER])return;
+    iy[ENEMY_GENERATOR_TIMER] = 0x04;
+    // 生成の開始
+    char* ix = EnemyGetEmpty();
+    if(ix==0)return;
+    ix[ENEMY_TYPE] = iy[ENEMY_GENERATOR_TYPE];// 敵の生成
+    ix[ENEMY_STATE] = 0;
+    ix[ENEMY_POSITION_X] = iy[ENEMY_GENERATOR_PARAM_0];
+    ix[ENEMY_POSITION_Y] = iy[ENEMY_GENERATOR_PARAM_1];
+    ix[ENEMY_HP] = 0x01;
+    
+    if(--iy[ENEMY_GENERATOR_LENGTH])return;// 生成数の更新
+    iy[ENEMY_GENERATOR_TYPE] = 0;
+    iy[ENEMY_GENERATOR_STATE] = 0;
 }
 static void EnemyFansFrontMove(void);
 static void EnemyFansBackMove(void);
