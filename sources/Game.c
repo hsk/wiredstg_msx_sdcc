@@ -10,6 +10,7 @@
 #include "Shot.h"
 #include "Enemy.h"
 #include "Bullet.h"
+#include "string.h"
 // 状態
 #define GAME_STATE_NULL 0x00
 #define GAME_STATE_PLAY 0x10
@@ -165,10 +166,10 @@ void GameInitialize(void) {
     EnemyInitialize(); // 敵の初期化
     BulletInitialize(); // 弾の初期化
     gamePause = 0;// 一時停止の初期化
-    for(char i=0;i<6;i++)gameScore[i]=0;// スコアの初期化
+    memset(gameScore,0,6);// スコアの初期化
     gameScorePlus = 0;
     gameScroll = 0;// スクロールの初期化
-    for(short i=0;i<0x300;i++)appPatternName[i]=0;// パターンのクリア
+    memset(appPatternName,0,0x300);// パターンのクリア
     // パターンネームの転送
     AppTransferPatternName();
     // videoRegister[VDP_R1] |= 1<<VDP_R1_BL;// 描画の開始
@@ -230,18 +231,21 @@ static void GamePlay(void) {
 static void GameOver(void) {
     if (!(gameState&0xf)) {// 初期化の開始
         // ゲームオーバーの表示
-        for(char*hl=gameOverString,*de=&appPatternName[0x016b],i=0xa;i;i--)*de++ = *hl++;
+        memcpy(&appPatternName[0x016b],gameOverString,0xa);
+        //for(char*hl=(void*)gameOverString,*de=&appPatternName[0x016b],i=0xa;i;i--)*de++ = *hl++;
         AppTransferPatternName();// パターンネームの転送
-        soundRequest[0]=gameOverBgm0;// ＢＧＭの再生
-        soundRequest[1]=gameOverBgm1;
-        soundRequest[2]=gameOverBgm2;
+        soundRequest[0]=(void*)gameOverBgm0;// ＢＧＭの再生
+        soundRequest[1]=(void*)gameOverBgm1;
+        soundRequest[2]=(void*)gameOverBgm2;
         gameState++;// 初期化の完了
     }
     if (soundRequest[0]||soundPlay[0]) return; // ＢＧＭの監視
     appState = APP_STATE_TITLE_INITIALIZE; // タイトルへ戻る
 }
-static void check_shot(void) {// ショットのチェック
+// ヒットチェックを行う
+static void GameHitCheck(void) {
     gameScorePlus = 0;// 加算されるスコアの設定
+    // ショットのチェック
     for(char *ix = shot, b = SHOT_N,c = 0;b;ix += SHOT_SIZE,--b) {
         if(ix[SHOT_STATE]==0)continue;
         unsigned short de = ((unsigned short)(ix[SHOT_POSITION_Y]&0xf8))*4+(ix[SHOT_POSITION_X]>>3);
@@ -256,9 +260,7 @@ static void check_shot(void) {// ショットのチェック
         } else if(ground[de]==0)continue;
         ix[SHOT_STATE] = 0;
     }
-    
-}
-static void check_bullet(void) {
+    #if 0
     // 弾のチェック
     for(char b=bulletN,*ix=bullet;b;b--,ix+=BULLET_SIZE) {
         if (ix[BULLET_STATE]==0)continue;
@@ -270,28 +272,19 @@ static void check_bullet(void) {
             a = ((signed short)ship[SHIP_POSITION_Y])-ix[BULLET_POSITION_YI];
             if (a < -4 || 4 < a) continue;
             //if (--ship[SHIP_HP]) break;
-            //break; // debug
             ship[SHIP_TYPE] = SHIP_TYPE_BOMB;
             ship[SHIP_STATE] = 0;
         }
         ix[BULLET_STATE] = 0;
     }
-}
-static void check_ship(void) {
     // 自機のチェック
     if (ship[SHIP_TYPE] != SHIP_TYPE_VICVIPER) return;
     unsigned short tmp = ((unsigned short)(ship[SHIP_POSITION_Y]&0xf8))*4+(ship[SHIP_POSITION_X]>>3);
     if (enemyCollision[tmp]==0 && ground[tmp]==0) return;
     //if(--ship[SHIP_HP]) return;
-    //return; // debug
     ship[SHIP_TYPE] = SHIP_TYPE_BOMB;
     ship[SHIP_STATE] = 0;
-}
-// ヒットチェックを行う
-static void GameHitCheck(void) {
-    check_shot();// ショットのチェック
-    check_bullet();// 弾のチェック
-    check_ship();// 自機のチェック
+    #endif
 }
 // スコアを更新する
 static void GameUpdateScore(void) {
@@ -305,18 +298,19 @@ static void GameUpdateScore(void) {
             if (a & 0x80) break;
             *hl = a;
         }
-        if(!b) for(char *de = gameScore,b=6;b;de++,b--) *de=9;
-        // 小さかったらコピる
-        for(char *hl = gameScore,*de = appScore,b=6;b;hl++,de++,b--) {
-            if (*de < *hl) break;
-            if (*de > *hl) {
-                for(;b;hl++,de++,b--) *de = *hl;
-                break;
+        if(!b) memset(gameScore,9,6);
+        else // 小さかったらコピる
+            for(char *hl = gameScore,*de = appScore,b=6;b;hl++,de++,b--) {
+                if (*de > *hl) break;
+                if (*de < *hl) {
+                    memcpy(de,hl,b);
+                    break;
+                }
             }
-        }
     }
     // 初期文字列の転送
-    for(char *hl = gameScoreString,*de = appPatternName,bc=0x20;bc;bc--)*de++=*hl++;
+    memcpy(appPatternName,gameScoreString,0x20);
+    //for(char *hl = (void*)gameScoreString,*de = appPatternName,bc=0x20;bc;bc--)*de++=*hl++;
     // スコアの描画
     for(char *hl = gameScore,*de = appPatternName + 3,b = 6;b;hl++,de++,b--) {
         if (*hl) {
@@ -334,5 +328,6 @@ static void GameUpdateScore(void) {
         }
     }
     // 速度の描画
-    for(char *hl = &gameSpeedString[ship[SHIP_SPEED]*2],*de = &appPatternName[0x1d],bc=2;bc;bc--)*de++=*hl++;
+    memcpy(&appPatternName[0x1d],&gameSpeedString[ship[SHIP_SPEED]*2],2);
+    //for(char *hl = (void*)&gameSpeedString[ship[SHIP_SPEED]*2],*de = &appPatternName[0x1d],bc=2;bc;bc--)*de++=*hl++;
 }

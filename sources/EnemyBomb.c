@@ -16,8 +16,12 @@ void EnemyBombGenerate(void) __naked {
     __endasm;
 }
 // 敵を更新する
-void EnemyBombUpdate(void) __naked {
+void EnemyBombUpdate(char* ix) __naked {
+    ix;
     __asm;
+    push ix
+    push hl
+    pop ix
     // 初期化の開始
     ld      a, ENEMY_STATE(ix)
     or      a
@@ -54,12 +58,17 @@ void EnemyBombUpdate(void) __naked {
         xor     a
         ld      ENEMY_TYPE(ix), a
     99$:
+    pop ix
     ret
     __endasm;
 }
 // 敵を描画する
-void EnemyBombRender(void) __naked {
+void EnemyBombRender(char* ix) __naked {
+    ix;
     __asm;
+    push ix
+    push hl
+    pop ix
     // クリッピングの取得
     ld      c, #0b00001111
     ld      a, ENEMY_POSITION_Y(ix)
@@ -120,6 +129,7 @@ void EnemyBombRender(void) __naked {
     jr      nc, 13$
         ld      (hl), a
     13$:
+    pop ix
     ret
     __endasm;
 }

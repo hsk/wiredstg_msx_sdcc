@@ -60,7 +60,11 @@ void EnemyDee01Generate(void) __naked {
         ld      ENEMY_GENERATOR_TIMER(iy), a
         // 生成の開始
         call    _EnemyGetEmpty
-        jr      c, 19$
+        ld a,d
+        or e
+        jr      z, 19$
+        push de
+        pop ix
         // 敵の生成
         ld      a, ENEMY_GENERATOR_TYPE(iy)
         ld      ENEMY_TYPE(ix), a
@@ -89,8 +93,12 @@ void EnemyDee01Generate(void) __naked {
     __endasm;
 }
 // 敵を更新する
-void EnemyDee01Update(void) __naked {
+void EnemyDee01Update(char* ix) __naked {
+    ix;
     __asm;
+    push ix
+    push hl
+    pop ix
     // 初期化の開始
     ld      a, ENEMY_STATE(ix)
     or      a
@@ -219,6 +227,7 @@ void EnemyDee01Update(void) __naked {
         xor     a
         ld      ENEMY_TYPE(ix), a
     99$:
+    pop ix
     ret
     __endasm;
 }

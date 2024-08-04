@@ -42,6 +42,9 @@ void EnemyBigCoreGenerate(void) __naked {
     ld      iy, #_enemyGenerator
     // 敵の生成／コア
     call    _EnemyGetEmpty
+    push de
+    pop ix
+
     //   jr      c, 09$
     ld      a, #ENEMY_TYPE_BIGCORE_CORE
     ld      ENEMY_TYPE(ix), a
@@ -58,6 +61,9 @@ void EnemyBigCoreGenerate(void) __naked {
     push    ix
     // 敵の生成／ボディ
     call    _EnemyGetEmpty
+    push de
+    pop ix
+
     //   jr      c, 09$
     ld      a, #ENEMY_TYPE_BIGCORE_BODY
     ld      ENEMY_TYPE(ix), a
@@ -82,8 +88,12 @@ void EnemyBigCoreGenerate(void) __naked {
     __endasm;
 }
 // 敵を更新する／コア
-void EnemyBigCoreUpdateCore(void) __naked {
+void EnemyBigCoreUpdateCore(char* ix) __naked {
+    ix;
     __asm;
+    push ix
+    push hl
+    pop ix
     // 初期化の開始
     ld      a, ENEMY_STATE(ix)
     or      a
@@ -206,12 +216,17 @@ void EnemyBigCoreUpdateCore(void) __naked {
         ld      hl, #_enemyBigCoreSeHit
         ld      (_soundRequest + 0x0006), hl
     91$:
+    pop ix
     ret
     __endasm;
 }
 // 敵を更新する／ボディ
-void EnemyBigCoreUpdateBody(void) __naked {
+void EnemyBigCoreUpdateBody(char* ix) __naked {
+    ix;
     __asm;
+    push ix
+    push hl
+    pop ix
     // 初期化の開始
     ld      a, ENEMY_STATE(ix)
     or      a
@@ -256,12 +271,18 @@ void EnemyBigCoreUpdateBody(void) __naked {
         ld      ENEMY_TYPE(ix), a
         // 更新の完了
     99$:
+    pop ix
     ret
     __endasm;
 }
 // 敵を描画する／コア
-void EnemyBigCoreRenderCore(void) __naked {
+void EnemyBigCoreRender(char* ix) __naked {
+    ix;
     __asm;
+    push ix
+    push iy
+    push hl
+    pop ix
     // 位置の取得
     ld      a, ENEMY_POSITION_Y(ix)
     and     #0xf8
@@ -310,12 +331,19 @@ void EnemyBigCoreRenderCore(void) __naked {
         inc     iy
         djnz    10$
     19$:
+    pop iy
+    pop ix
     ret
     __endasm;
 }
 // 敵を描画する／ボディ
-void EnemyBigCoreRenderBody(void) __naked {
+void EnemyBigCoreBodyRender(char* ix) __naked {
+    ix;
     __asm;
+    push ix
+    push iy
+    push hl
+    pop ix
     // 位置の取得
     ld      a, ENEMY_POSITION_Y(ix)
     sub     #0x20
@@ -381,6 +409,8 @@ void EnemyBigCoreRenderBody(void) __naked {
         pop     bc
         djnz    11$
     19$:
+    pop iy
+    pop ix
     ret
     __endasm;
 }

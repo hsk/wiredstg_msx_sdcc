@@ -38,7 +38,11 @@ void EnemyRugalGenerate(void) __naked {
         ld      ENEMY_GENERATOR_TIMER(iy), a
         // 生成の開始
         call    _EnemyGetEmpty
-        jr      c, 19$
+        ld a,d
+        or e
+        jr      z, 19$
+        push de
+        pop ix
             // 敵の生成
             ld      a, ENEMY_GENERATOR_TYPE(iy)
             ld      ENEMY_TYPE(ix), a
@@ -70,8 +74,12 @@ void EnemyRugalGenerate(void) __naked {
     __endasm;
 }
 // 敵を更新する
-void EnemyRugalUpdate(void) __naked {
+void EnemyRugalUpdate(char* ix) __naked {
+    ix;
     __asm;
+    push ix
+    push hl
+    pop ix
     // 初期化の開始
     ld      a, ENEMY_STATE(ix)
     or      a
@@ -148,7 +156,7 @@ void EnemyRugalUpdate(void) __naked {
     29$:
     // ショットの更新
     dec     ENEMY_SHOT(ix)
-    ret     nz
+    jr     nz,99$
     ld      h, ENEMY_POSITION_X(ix)
     ld      l, ENEMY_POSITION_Y(ix)
     call    _BulletGenerate
@@ -156,12 +164,14 @@ void EnemyRugalUpdate(void) __naked {
     and     #0x3f
     add     #0x40
     ld      ENEMY_SHOT(ix), a
-    ret
+    jr 99$
     98$://}
     // 敵の削除
     xor     a
     ld      ENEMY_TYPE(ix), a
+    99$:
     // 更新の完了
+    pop ix
     ret
     __endasm;
 }

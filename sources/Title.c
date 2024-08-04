@@ -4,6 +4,7 @@
 #include "System.h"
 #include "App.h"
 #include "Title.h"
+#include "string.h"
 // 定数の定義
 static char const titleLogoString[] = {// ロゴ
     0x00, 0x00, 0x00, 0x00, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0xa0, 0xa1,
@@ -31,7 +32,8 @@ static char titleTimer;    // タイマ
 // タイトルを初期化する
 void TitleInitialize(void) {
     SystemClearSprite();// スプライトのクリア
-    for(short i=0;i<0x300;i++)appPatternName[i]=0;// パターンのクリア
+    memset(appPatternName,0,0x300);
+    //for(short i=0;i<0x300;i++)appPatternName[i]=0;// パターンのクリア
     AppTransferPatternName();// パターンネームの転送
     // パターンジェネレータの設定
     videoRegister[VDP_R4] = APP_PATTERN_GENERATOR_TABLE_0 >> 11;
@@ -50,14 +52,14 @@ static void updateInit(void) {
 static void updateAnim(void) {
     // アニメーションの更新
     if (titleAnimation<0x60)titleAnimation++;
-    for(char b=titleAnimation,*hl=titleLogoString,*de=appPatternName + 0x00c0;b;--b)
-        *de++ = *hl++; 
+    //for(char b=titleAnimation,*hl=(void*)titleLogoString,*de=appPatternName + 0x00c0;b;--b)*de++ = *hl++; 
+    memcpy(appPatternName + 0x00c0,titleLogoString,titleAnimation);
 }
 static void drawHiscore(void) {
     // ハイスコアの描画
     if (titleAnimation<0x60)return;
-    for(char b=0x11,*hl=titleScoreString,*de=appPatternName + 0x0187;b;--b)
-        *de++ = *hl++; 
+    //for(char b=0x11,*hl=(void*)titleScoreString,*de=appPatternName + 0x0187;b;--b)*de++ = *hl++;
+    memcpy(appPatternName + 0x0187,titleScoreString,0x11);;
     for(char b=6,*hl=appScore,*de=appPatternName + 0x0190;b;--b,hl++,de++) {
         if (*hl==0) continue;
         for(;b;--b) *de++ = *hl++ + 0x50;
@@ -65,8 +67,8 @@ static void drawHiscore(void) {
         break;
     }
     // SPACE キーの描画
-    for(char b=0x0f,*hl=titleSpaceString+(titleTimer&0x10),*de=appPatternName + 0x0228;b;--b)
-        *de++ = *hl++; 
+    //for(char b=0x0f,*hl=(void*)titleSpaceString+(titleTimer&0x10),*de=appPatternName + 0x0228;b;--b) *de++ = *hl++; 
+    memcpy(appPatternName + 0x0228,titleSpaceString+(titleTimer&0x10),0xf);
 }
 // タイトルを更新する
 void TitleUpdate(void) {
@@ -77,9 +79,9 @@ void TitleUpdate(void) {
         if (input[INPUT_BUTTON_SPACE]==1) {// SPACE キーの押下
             titleState++;
             titleAnimation=0x60;// アニメーションの設定
-            soundRequest[0] = titleJingle0;// ジングルの再生
-            soundRequest[1] = titleJingle1;
-            soundRequest[2] = titleJingle2;
+            soundRequest[0] = (void*)titleJingle0;// ジングルの再生
+            soundRequest[1] = (void*)titleJingle1;
+            soundRequest[2] = (void*)titleJingle2;
         }
     } else {
         titleTimer += 8;// タイマの更新

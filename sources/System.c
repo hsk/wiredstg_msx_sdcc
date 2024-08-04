@@ -1482,7 +1482,7 @@ static void SystemClearSoundChannel(void) __naked {
     __endasm;
 }
 // 乱数を取得する
-void SystemGetRandom(void) __naked {
+char SystemGetRandom(void) __naked {
     __asm;
     // レジスタの保存
     push    hl

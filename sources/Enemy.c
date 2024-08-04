@@ -7,10 +7,13 @@
 #include "Ship.h"
 #include "Enemy.h"
 #include "Bullet.h"
+#include "string.h"
 // 定数の定義
 // ジェネレータ
 static void EnemyNullGenerate(void);
 typedef void(*FP)(void);
+typedef void(*FP1)(char*);
+
 static FP const enemyGenerateProc[] = {
     EnemyNullGenerate,
     EnemyNullGenerate,
@@ -26,7 +29,7 @@ static FP const enemyGenerateProc[] = {
     EnemyDuckerGenerate,
     EnemyBigCoreGenerate,
     0x0000,
-    EnemyBeamGenerate,
+    0x0000,
 };
 static char const enemyGenerateType[] = {
     ENEMY_TYPE_FANS_FRONT,
@@ -63,8 +66,8 @@ static char const enemyGenerateType[] = {
     ENEMY_TYPE_DUCKER_LOWER,
 };
 // 更新
-static void EnemyNullUpdate(void);
-static FP const enemyUpdateProc[] = {
+static void EnemyNullUpdate(char* ix);
+static FP1 const enemyUpdateProc[] = {
     EnemyNullUpdate,
     EnemyBombUpdate,
     EnemyFansUpdate,
@@ -82,9 +85,9 @@ static FP const enemyUpdateProc[] = {
     EnemyBeamUpdate,
 };
 // 描画
-static void EnemyNullRender(void);
-static void EnemyPutPattern16x16(void);
-static FP const enemyRenderProc[] = {
+static void EnemyNullRender(char*);
+static void EnemyPutPattern16x16(char*);
+static FP1 const enemyRenderProc[] = {
     EnemyNullRender,
     EnemyBombRender,
     EnemyPutPattern16x16,
@@ -97,8 +100,8 @@ static FP const enemyRenderProc[] = {
     EnemyPutPattern16x16,
     EnemyPutPattern16x16,
     EnemyPutPattern16x16,
-    EnemyBigCoreRenderCore,
-    EnemyBigCoreRenderBody,
+    EnemyBigCoreRender,
+    EnemyBigCoreBodyRender,
     EnemyBeamRender,
 };
 // 変数の定義
@@ -107,403 +110,202 @@ char enemyN;
 char enemyGenerator[ENEMY_GENERATOR_SIZE];// ジェネレータ
 char enemyCollision[0x0300];// コリジョン
 // 敵を初期化する
-void EnemyInitialize(void) __naked {
-    __asm;
-    // 敵の初期化
-    ld      hl, #(_enemy + 0x0000)
-    ld      de, #(_enemy + 0x0001)
-    ld      bc, #(ENEMY_SIZE * ENEMY_N - 1)
-    xor     a
-    ld      (hl), a
-    ldir
-    ld      hl, #(_enemy + ENEMY_INDEX)
-    ld      de, #ENEMY_SIZE
-    ld      b, #ENEMY_N
-    ld      a, #0x01
-    0$:
-        ld      (hl), a
-        add     hl, de
-        inc     a
-    djnz    0$
-    ld      a, #0x07
-    ld      (_enemyN), a
+void EnemyInitialize(void) {
+    memset(enemy,0,ENEMY_SIZE * ENEMY_N);// 敵の初期化
+    for(char b=ENEMY_N,*hl=enemy + ENEMY_INDEX,a=1;b;b--,hl+=ENEMY_SIZE,a++)
+        *hl=a;
+    enemyN = 7;
     // ジェネレータの初期化
-    ld      hl, #(_enemyGenerator + 0x0000)
-    ld      de, #(_enemyGenerator + 0x0001)
-    ld      bc, #(ENEMY_GENERATOR_SIZE)
-    xor     a
-    ld      (hl), a
-    ldir
-    ld      a, #ENEMY_PHASE_NORMAL
-    ld      (_enemyGenerator + ENEMY_GENERATOR_PHASE), a
+    memset(enemyGenerator,0,ENEMY_GENERATOR_SIZE);
+    enemyGenerator[ENEMY_GENERATOR_PHASE]=ENEMY_PHASE_NORMAL;
     // コリジョンの初期化
-    ld      hl, #(_enemyCollision + 0x0000)
-    ld      de, #(_enemyCollision + 0x0001)
-    ld      bc, #0x02ff
-    xor     a
-    ld      (hl), a
-    ldir
+    memset(enemyCollision,0,0x0300);
     // パターンジェネレータの設定
-    ld      a, #(APP_PATTERN_GENERATOR_TABLE_1 >> 11)
-    ld      (_videoRegister + VDP_R4), a
+    videoRegister[VDP_R4] = APP_PATTERN_GENERATOR_TABLE_1 >> 11;
     // ビデオレジスタの転送
-    ld      hl, #_request
-    set     #REQUEST_VIDEO_REGISTER, (hl)
-    // レジスタの復帰
-    // 終了
+    request |= 1<<REQUEST_VIDEO_REGISTER;
+}
+static void fpcall0(FP fp) {
+    fp;
+    __asm;
+    push ix
+    push iy
+    ld de,#11$
+    push de
+    jp (hl)
+    11$:
+    pop iy
+    pop ix
+    ret
+    __endasm;
+}
+static void fpcall1(FP fp,char* ix) {
+    ix;fp;
+    __asm;
+    push ix
+    ex de,hl
+    push de
+    pop ix
+    ld de,#11$
+    push de
+    jp (ix)
+    11$:
+    pop ix
+    ret
+    __endasm;
+}
+static void fpcall1b(FP fp,char* ix) {
+    ix;fp;
+    __asm;
+    //push ix
+    push iy
+    ex de,hl
+    push de
+    pop iy
+    //push hl
+    //pop ix
+    ld de,#11$
+    push de
+    jp (iy)
+    11$:
+
+    pop iy
+    //pop ix
     ret
     __endasm;
 }
 // 敵を更新する
-void EnemyUpdate(void) __naked {
-    __asm;
+void EnemyUpdate(void) {
     // コリジョンの初期化
-    ld      hl, #(_enemyCollision + 0x0000)
-    ld      de, #(_enemyCollision + 0x0001)
-    ld      bc, #0x02ff
-    xor     a
-    ld      (hl), a
-    ldir
-    // 敵の生成
-    ld      hl, #19$
-    push    hl
-        ld      a, (_enemyGenerator + ENEMY_GENERATOR_TYPE)
-        add     a, a
-        ld      e, a
-        ld      d, #0x00
-        ld      hl, #_enemyGenerateProc
-        add     hl, de
-        ld      e, (hl)
-        inc     hl
-        ld      d, (hl)
-        ex      de, hl
-        jp      (hl)
-    //   pop     hl
-    19$:
-    // 敵の更新
-    ld      ix, #_enemy
-    ld      a, (_enemyN)
-    ld      b, a
-    20$:
-        ld      hl, #21$
-            push    bc
-            push    hl
-            ld      a, ENEMY_TYPE(ix)
-            add     a, a
-            ld      e, a
-            ld      d, #0x00
-            ld      hl, #_enemyUpdateProc
-            add     hl, de
-            ld      e, (hl)
-            inc     hl
-            ld      d, (hl)
-            ex      de, hl
-            jp      (hl)
-        //   pop     hl
-        21$:
-        pop     bc
-        ld      de, #ENEMY_SIZE
-        add     ix, de
-    djnz    20$
-    // 終了
-    ret
-    __endasm;
+    memset(enemyCollision,0,0x300);
+    fpcall0(enemyGenerateProc[enemyGenerator[ENEMY_GENERATOR_TYPE]]);
+    for(char b=enemyN,*ix=enemy;b;b--,ix+=ENEMY_SIZE) {// 敵の更新
+        fpcall1b(enemyUpdateProc[ix[ENEMY_TYPE]],ix);
+    }
 }
 // 敵を描画する
-void EnemyRender(void) __naked {
-    __asm;
+void EnemyRender(void) {
     // 種類別の描画
-    ld      ix, #_enemy
-    ld      a, (_enemyN)
-    ld      b, a
-    10$:
-        ld      hl, #11$
-            push    bc
-            push    hl
-            ld      a, ENEMY_TYPE(ix)
-            add     a, a
-            ld      e, a
-            ld      d, #0x00
-            ld      hl, #_enemyRenderProc
-            add     hl, de
-            ld      e, (hl)
-            inc     hl
-            ld      d, (hl)
-            ex      de, hl
-            jp      (hl)
-        //   pop     hl
-        11$:
-        pop     bc
-        ld      de, #ENEMY_SIZE
-        add     ix, de
-    djnz    10$
-    // 終了
-    ret
-    __endasm;
+    for(char b=enemyN,*ix=enemy;b;b--,ix+=ENEMY_SIZE) {
+        fpcall1(enemyRenderProc[ix[ENEMY_TYPE]],ix);
+    }
 }
 // ENEMY_TYPE_NULL を生成する
-static void EnemyNullGenerate(void) __naked {
-    __asm;
-    // レジスタの保存
+static void EnemyNullGenerate(void) {
     // ジェネレータの取得
-    ld      iy, #_enemyGenerator
+    char *iy = (void*)enemyGenerator;
     // 通常戦の開始
-    ld      a, ENEMY_GENERATOR_PHASE(iy)
-    dec     a
-    jr      nz, 19$
-    // 通常戦の初期化
-    ld      a, ENEMY_GENERATOR_STATE(iy)
-    or      a
-    jr      nz, 10$
-        ld      a, #0x08
-        ld      ENEMY_GENERATOR_TIMER(iy), a
-        inc     ENEMY_GENERATOR_STATE(iy)
-    10$:
-    // ボス登場の条件
-    ld      hl, (_ship + SHIP_SHOT_L)
-    ld      de, #0x0100
-    or      a
-    sbc     hl, de
-    jr      nc, 18$
-        // タイマの更新
-        dec     ENEMY_GENERATOR_TIMER(iy)
-        jp      nz, 99$
-        // 敵の生成
-        xor     a
-        ld      ENEMY_GENERATOR_STATE(iy), a
-        call    _SystemGetRandom
-        rra
-        rra
-        and     #0x1f
-        ld      e, a
-        ld      d, #0x00
-        ld      hl, #_enemyGenerateType
-        add     hl, de
-        ld      a, (hl)
-        ld      ENEMY_GENERATOR_TYPE(iy), a
-        jp      99$
-        // 通常戦の完了
-    18$:
-        ld      a, #ENEMY_PHASE_WARNING
-        ld      ENEMY_GENERATOR_PHASE(iy), a
-        xor     a
-        ld      ENEMY_GENERATOR_STATE(iy), a
-        jp      99$
-    19$:
-        // 警告の開始
-        dec     a
-        jr      nz, 29$
+    char a = iy[ENEMY_GENERATOR_PHASE];
+    if (a==ENEMY_PHASE_NORMAL) {
+        // 通常戦の初期化
+        a = iy[ENEMY_GENERATOR_STATE];
+        if (a==0) {
+            a=8;
+            iy[ENEMY_GENERATOR_TIMER]=a;
+            iy[ENEMY_GENERATOR_STATE]++;
+        }
+        // ボス登場の条件
+        if (*(short*)&ship[SHIP_SHOT_L] < 0x100) {
+            // タイマの更新
+            iy[ENEMY_GENERATOR_TIMER]--;
+            if(iy[ENEMY_GENERATOR_TIMER]) return;
+            // 敵の生成
+            iy[ENEMY_GENERATOR_STATE] = 0;
+            iy[ENEMY_GENERATOR_TYPE] = enemyGenerateType[(SystemGetRandom()>>2)&0x1f];
+            return;
+            // 通常戦の完了
+        }
+        iy[ENEMY_GENERATOR_PHASE] = ENEMY_PHASE_WARNING;
+        iy[ENEMY_GENERATOR_STATE] = 0;
+        return;
+    }
+    if (a==ENEMY_PHASE_WARNING) {
         // 警告の初期化
-        ld      a, ENEMY_GENERATOR_STATE(iy)
-        or      a
-        jr      nz, 20$
-        ld      a, #0x30
-        ld      ENEMY_GENERATOR_TIMER(iy), a
-        inc     ENEMY_GENERATOR_STATE(iy)
-    20$:
+        if (iy[ENEMY_GENERATOR_STATE]==0) {
+            iy[ENEMY_GENERATOR_TIMER] = 0x30;
+            iy[ENEMY_GENERATOR_STATE]++;
+        }
         // 敵の監視
-        ld      hl, #(_enemy + ENEMY_TYPE)
-        ld      de, #ENEMY_SIZE
-        ld      a, (_enemyN)
-        ld      b, a
-        xor     a
-    21$:
-        or      (hl)
-        add     hl, de
-        djnz    21$
-        or      a
-        jr      nz, 99$
+        a = 0;
+        for(char b=enemyN,*hl = &enemy[ENEMY_TYPE];b;hl+=ENEMY_SIZE,b--)
+            a |= *hl;
+        if (a) return;
         // タイマの更新
-        dec     ENEMY_GENERATOR_TIMER(iy)
-        jr      nz, 99$
+        if(--iy[ENEMY_GENERATOR_TIMER]) return;
         // ビッグコアの生成
-        ld      a, #ENEMY_TYPE_BIGCORE_CORE
-        ld      ENEMY_GENERATOR_TYPE(iy), a
-        xor     a
-        ld      ENEMY_GENERATOR_STATE(iy), a
+        iy[ENEMY_GENERATOR_TYPE] = ENEMY_TYPE_BIGCORE_CORE;
+        iy[ENEMY_GENERATOR_STATE] = 0;
         // パターンジェネレータの設定
-        ld      a, #(APP_PATTERN_GENERATOR_TABLE_2 >> 11)
-        ld      (_videoRegister + VDP_R4), a
+        videoRegister[VDP_R4] = (APP_PATTERN_GENERATOR_TABLE_2 >> 11);
         // ビデオレジスタの転送
-        ld      hl, #_request
-        set     #REQUEST_VIDEO_REGISTER, (hl)
+        request |= 1<<REQUEST_VIDEO_REGISTER;
         // 警告の完了
-        ld      a, #ENEMY_PHASE_BOSS
-        ld      ENEMY_GENERATOR_PHASE(iy), a
-        xor     a
-        ld      ENEMY_GENERATOR_STATE(iy), a
-        jr      99$
-    29$:
-        // ボス戦の開始
-        dec     a
-        jr      nz, 39$
-        // ボス戦の初期化
-        ld      a, ENEMY_GENERATOR_STATE(iy)
-        or      a
-        jr      nz, 30$
-        ld      a, #0x60
-        ld      ENEMY_GENERATOR_TIMER(iy), a
-        inc     ENEMY_GENERATOR_STATE(iy)
-    30$:
-        // ボスの監視
-        ld      hl, #(_enemy + ENEMY_TYPE)
-        ld      de, #ENEMY_SIZE
-        ld      a, (_enemyN)
-        ld      b, a
-        ld      a, #ENEMY_TYPE_BIGCORE_BODY
-    31$:
-        cp      (hl)
-        jr      z, 99$
-        add     hl, de
-        djnz    31$
-        // タイマの更新
-        dec     ENEMY_GENERATOR_TIMER(iy)
-        jr      nz, 99$
-        // 自機のリセット
-        ld      hl, #0x0000
-        ld      (_ship + SHIP_SHOT_L), hl
-        // 敵の増加
-        ld      hl, #_enemyN
-        ld      a, (hl)
-        add     a, #0x03
-        cp      #ENEMY_N
-        jr      c, 32$
-        ld      a, #ENEMY_N
-    32$:
-        ld      (hl), a
-        // 弾の増加
-        ld      hl, #_bulletN
-        ld      a, (hl)
-        add     a, #0x03
-        cp      #BULLET_N
-        jr      c, 33$
-        ld      a, #BULLET_N
-    33$:
-        ld      (hl), a
-        // パターンジェネレータの設定
-        ld      a, #(APP_PATTERN_GENERATOR_TABLE_1 >> 11)
-        ld      (_videoRegister + VDP_R4), a
-        // ビデオレジスタの転送
-        ld      hl, #_request
-        set     #REQUEST_VIDEO_REGISTER, (hl)
-        // ボス戦の完了
-        ld      a, #ENEMY_PHASE_NORMAL
-        ld      ENEMY_GENERATOR_PHASE(iy), a
-        xor     a
-        ld      ENEMY_GENERATOR_STATE(iy), a
-    //   jr      99$
-    39$:
-        // 生成の完了
-    99$:
-    // 終了
-    ret
-    __endasm;
+        iy[ENEMY_GENERATOR_PHASE] = ENEMY_PHASE_BOSS;
+        iy[ENEMY_GENERATOR_STATE] = 0;
+        return;
+    }
+    // ボス戦の開始
+    if (a!=ENEMY_PHASE_BOSS) return;
+    // ボス戦の初期化
+    if (iy[ENEMY_GENERATOR_STATE]==0){
+        iy[ENEMY_GENERATOR_TIMER] = 0x60;
+        iy[ENEMY_GENERATOR_STATE]++;
+    }
+    // ボスの監視
+    for(char* hl = enemy + ENEMY_TYPE,b = enemyN;b;hl += ENEMY_SIZE,--b)
+        if (*hl == ENEMY_TYPE_BIGCORE_BODY) return;
+    // タイマの更新
+    if(--iy[ENEMY_GENERATOR_TIMER]) return;
+    // 自機のリセット
+    *(short*)&ship[SHIP_SHOT_L] = 0;
+    // 敵の増加
+    enemyN+=3;
+    if (enemyN>ENEMY_N) enemyN = ENEMY_N;
+    // 弾の増加
+    bulletN+=3;
+    if (bulletN>BULLET_N) bulletN=BULLET_N;
+    // パターンジェネレータの設定
+    videoRegister[VDP_R4] = (APP_PATTERN_GENERATOR_TABLE_1 >> 11);
+    // ビデオレジスタの転送
+    request |= 1<<REQUEST_VIDEO_REGISTER;
+    // ボス戦の完了
+    enemyGenerator[ENEMY_GENERATOR_PHASE]=ENEMY_PHASE_NORMAL;
+    enemyGenerator[ENEMY_GENERATOR_STATE]=0;
+    // 生成の完了
 }
 // ENEMY_TYPE_NULL を更新する
-static void EnemyNullUpdate(void) __naked {
-    __asm;
-    ret
-    __endasm;
+static void EnemyNullUpdate(char* ix) {
+    ix;
 }
 // ENEMY_TYPE_NULL を描画する
-static void EnemyNullRender(void) __naked {
-    __asm;
-    ret
-    __endasm;
+static void EnemyNullRender(char* ix) {
+    ix;
 }
 // 空の敵を取得する
-void EnemyGetEmpty(void) __naked {
-    __asm;
-    // 空の敵の取得
-    ld      ix, #_enemy
-    ld      de, #ENEMY_SIZE
-    ld      a, (_enemyN)
-    ld      b, a
-    0$:
-        ld      a, ENEMY_TYPE(ix)
-        or      a
-        jr      z, 9$
-        add     ix, de
-    djnz    0$
-    ld      ix, #0x0000
-    scf
-    9$:
-        // 終了
-        ret
-    __endasm;
+char* EnemyGetEmpty(void) {
+    for(char b=enemyN,*ix=enemy;b;b--,ix+=ENEMY_SIZE)
+        if (!ix[ENEMY_TYPE]) return ix;
+    return NULL;
 }
 // 16x16 サイズのパターンを置く
-static void EnemyPutPattern16x16(void) __naked {
-    __asm;
+static void EnemyPutPattern16x16(char* ix) {
     // クリッピングの取得
-    ld      c, #0b00001111
-    ld      a, ENEMY_POSITION_Y(ix)
-    cp      #0x08
-    jr      nc, 00$
-        res     #0, c
-        res     #1, c
-    00$:
-    cp      #0xc0
-    jr      c, 01$
-        res     #2, c
-        res     #3, c
-    01$:
-    ld      a, ENEMY_POSITION_X(ix)
-    cp      #0x08
-    jr      nc, 02$
-        res     #0, c
-        res     #2, c
-    02$:
+    char c = 0b00001111;
+    if (ix[ENEMY_POSITION_Y]<8) c &= ~((1<<0)|(1<<1));
+    if (ix[ENEMY_POSITION_Y]>=0xc0) c &= ~((1<<2)|(1<<3));
+    if (ix[ENEMY_POSITION_X]<8) c &= ~((1<<0)|(1<<2));
+
     // パターンを置く
-    ld      a, ENEMY_POSITION_Y(ix)
-    and     #0xf8
-    ld      d, #0x00
-    add     a, a
-    rl      d
-    add     a, a
-    rl      d
-    ld      e, ENEMY_POSITION_X(ix)
-    srl     e
-    srl     e
-    srl     e
-    add     a, e
-    ld      e, a
-    ld      hl, #(_appPatternName - 0x0021)
-    add     hl, de
-    ld      iy, #(_enemyCollision - 0x0021)
-    add     iy, de
-    ld      a, ENEMY_ANIMATION(ix)
-    ld      b, ENEMY_INDEX(ix)
-    rr      c
-    jr      nc, 10$
-        ld      (hl), a
-        ld      0(iy), b
-    10$:
-    inc     hl
-    inc     iy
-    inc     a
-    rr      c
-    jr      nc, 11$
-        ld      (hl), a
-        ld      0(iy), b
-    11$:
-    ld      de, #0x001f
-    add     hl, de
-    add     iy, de
-    add     a, #0x0f
-    rr      c
-    jr      nc, 12$
-        ld      (hl), a
-        ld      0(iy), b
-    12$:
-    inc     hl
-    inc     iy
-    inc     a
-    rr      c
-    jr      nc, 13$
-        ld      (hl), a
-        ld      0(iy), b
-    13$:
-    ret
-    __endasm;
+    short de = (ix[ENEMY_POSITION_Y]&0xf8)*4 + (ix[ENEMY_POSITION_X] >> 3);
+    char* hl = appPatternName - 0x0021 + de;
+    char* iy = enemyCollision - 0x0021 + de;
+    char a = ix[ENEMY_ANIMATION];
+    char b = ix[ENEMY_INDEX];
+    if (c&1) { *hl = a; *iy = b; } c=c>>1;
+    hl++;iy++;a++;
+    if (c&1) { *hl = a; *iy = b; } c=c>>1;
+    hl+= 0x1f; iy+= 0x1f; a+= 0xf;
+    if (c&1) { *hl = a; *iy = b; } c=c>>1;
+    hl++;iy++;a++;
+    if (c&1) { *hl = a; *iy = b; } c=c>>1;
 }

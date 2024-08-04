@@ -88,7 +88,7 @@ void SystemUpdateSound(void);
 void SystemSuspendSound(void);
 void SystemResumeSound(void);
 // 乱数
-void SystemGetRandom(void);
+char SystemGetRandom(void);
 // 三角関数
 void SystemGetSin(void);
 void SystemGetCos(void);

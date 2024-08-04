@@ -43,7 +43,11 @@ void EnemyDuckerGenerate(void) __naked {
         ld      ENEMY_GENERATOR_TIMER(iy), a
         // 生成の開始
         call    _EnemyGetEmpty
-        ret     c
+        ld a,d
+        or e
+        ret z
+        push de
+        pop ix
         // 敵の生成
         ld      a, ENEMY_GENERATOR_TYPE(iy)
         ld      ENEMY_TYPE(ix), a
@@ -68,8 +72,12 @@ void EnemyDuckerGenerate(void) __naked {
     __endasm;
 }
 // 敵を更新する
-void EnemyDuckerUpdate(void) __naked {
+void EnemyDuckerUpdate(char* ix) __naked {
+    ix;
     __asm;
+    push ix
+    push hl
+    pop ix
     // 初期化の開始
     ld      a, ENEMY_STATE(ix)
     or      a
@@ -240,11 +248,13 @@ void EnemyDuckerUpdate(void) __naked {
         jr      83$
         89$:
         ld      ENEMY_POSITION_Y(ix), c
-        ret
+        jr 99$
     // 敵の削除
     98$:// }
     xor     a
     ld      ENEMY_TYPE(ix), a
+    99$:
+    pop ix
     ret
     __endasm;
 }

@@ -49,7 +49,11 @@ void EnemyGarunGenerate(void) __naked {
     ld      ENEMY_GENERATOR_TIMER(iy), a
     // 生成の開始
     call    _EnemyGetEmpty
-    ret     c
+    ld a,d
+    or e
+    ret     z
+    push de
+    pop ix
     // 敵の生成
     ld      a, ENEMY_GENERATOR_TYPE(iy)
     ld      ENEMY_TYPE(ix), a
@@ -82,8 +86,12 @@ void EnemyGarunGenerate(void) __naked {
     __endasm;
 }
 // 敵を更新する
-void EnemyGarunUpdate(void) __naked {
+void EnemyGarunUpdate(char* ix) __naked {
+    ix;
     __asm;
+    push ix
+    push hl
+    pop ix
     // 初期化の開始
     ld      a, ENEMY_STATE(ix)
     or      a
@@ -161,12 +169,14 @@ void EnemyGarunUpdate(void) __naked {
         add     hl, de
         ld      a, (hl)
         ld      ENEMY_ANIMATION(ix), a
-        ret
+        jr 99$
         // 敵の削除
     98$:
     xor     a
     ld      ENEMY_TYPE(ix), a
     // 更新の完了
+    99$:
+    pop ix
     ret
     __endasm;
 }

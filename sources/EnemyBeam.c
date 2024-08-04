@@ -6,12 +6,19 @@
 #include "Game.h"
 #include "Enemy.h"
 // 敵を生成する
-void EnemyBeamGenerate(void) __naked {
+void EnemyBeamGenerate(char* hl) __naked {
+    hl;
     __asm;
     push    ix
+    push hl
     // 敵の生成
     call    _EnemyGetEmpty
-    jr      c, 09$
+    pop hl
+    ld a,d
+    or e
+    jr      z, 09$
+        push de
+        pop ix
         ld      a, #ENEMY_TYPE_BEAM
         ld      ENEMY_TYPE(ix), a
         xor     a
@@ -30,8 +37,12 @@ void EnemyBeamGenerate(void) __naked {
     __endasm;
 }
 // 敵を更新する
-void EnemyBeamUpdate(void) __naked {
+void EnemyBeamUpdate(char* ix) __naked {
+    ix;
     __asm
+    push ix
+    push hl
+    pop ix
     // 初期化の開始
     ld      a, ENEMY_STATE(ix)
     or      a
@@ -61,12 +72,17 @@ void EnemyBeamUpdate(void) __naked {
         xor     a
         ld      ENEMY_TYPE(ix), a
     99$:
+    pop ix
     ret
     __endasm;
 }
 // 敵を描画する
-void EnemyBeamRender(void) __naked {
+void EnemyBeamRender(char* ix) __naked {
+    ix;
     __asm
+    push ix
+    push hl
+    pop ix
     // 位置の取得
     ld      a, ENEMY_POSITION_Y(ix)
     and     #0xf8
@@ -173,6 +189,7 @@ void EnemyBeamRender(void) __naked {
             inc     hl
         djnz    21$
     29$:
+    pop ix
     ret
     __endasm;
 }

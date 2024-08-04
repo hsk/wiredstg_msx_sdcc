@@ -2,6 +2,7 @@
 #include "bios.h"
 #include "System.h"
 #include "App.h"
+#include "string.h"
 #define H_TIMI_COUNT 0x02 /* タイマ割り込みカウンタ */
 // 変数定義
 static char h_timiRoutine[5];// タイマ割り込みルーチン
@@ -15,7 +16,8 @@ void main(void) {
     AppInitialize();// アプリケーションの初期化
     __asm di __endasm; // 割り込みの禁止
     // タイマ割り込み処理の保存
-    for(char *hl = (char*)H_TIMI,*de = h_timiRoutine,bc=5;bc;bc--)*de++=*hl++;
+    //for(char *hl = (char*)H_TIMI,*de = h_timiRoutine,bc=5;bc;bc--)*de++=*hl++;
+    memcpy(h_timiRoutine,(char*)H_TIMI,5);
     // タイマ割り込み処理の書き換え
     ((char*)H_TIMI)[0] = 0xc3;
     *(short*)&((char*)H_TIMI)[1] = (short)H_timiEntry;
@@ -27,11 +29,12 @@ void main(void) {
     // アプリケーションの終了
     // システムの終了
     // キーボードバッファのクリア
-    typedef void (*FP)();
+    typedef void (*FP)(void);
     ((FP)KILBUF)();
     __asm di __endasm; // 割り込みの禁止
     // タイマ割り込み処理の復帰
-    for(char *hl = h_timiRoutine,*de = (char*)H_TIMI,bc=5;bc;bc--)*de++=*hl++;
+    //for(char *hl = h_timiRoutine,*de = (char*)H_TIMI,bc=5;bc;bc--)*de++=*hl++;
+    memcpy((char*)H_TIMI,h_timiRoutine,5);
     __asm ei __endasm; // 割り込みの禁止の解除
 }
 // タイマ割り込みのエントリ

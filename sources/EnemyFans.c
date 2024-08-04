@@ -45,7 +45,12 @@ void EnemyFansGenerate(void) __naked {
         ld      ENEMY_GENERATOR_TIMER(iy), a
         // 生成の開始
         call    _EnemyGetEmpty
-        jr      c, 19$
+        ld a,d
+        or e
+        jr      z, 19$
+        push de
+        pop ix
+
             // 敵の生成
             ld      a, ENEMY_GENERATOR_TYPE(iy)
             ld      ENEMY_TYPE(ix), a
@@ -71,8 +76,12 @@ void EnemyFansGenerate(void) __naked {
 static void EnemyFansFrontMove(void);
 static void EnemyFansBackMove(void);
 // 敵を更新する
-void EnemyFansUpdate(void) __naked {
+void EnemyFansUpdate(char* ix) __naked {
+    ix;
     __asm;
+    push ix
+    push hl
+    pop ix
     // 初期化の開始
     ld      a, ENEMY_STATE(ix)
     or      a
@@ -126,6 +135,7 @@ void EnemyFansUpdate(void) __naked {
         jr      99$
         // 更新の完了
     99$:
+    pop ix
     ret
     __endasm;
 }
