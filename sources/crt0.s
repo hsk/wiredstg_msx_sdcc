@@ -35,7 +35,7 @@ gsfinal:
 data:
 ; スタック領域
 stack:
-    .ds     2048
+    .ds     1024*3
 stackfinal:
 ; DATA 領域の末端
     .area   _DATAFINAL

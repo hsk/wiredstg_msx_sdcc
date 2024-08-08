@@ -13,78 +13,29 @@
 // 変数の定義
 static char star[STAR_SIZE * STAR_N];// 星
 // 星を初期化する
-void StarInitialize(void) __naked {
-    __asm;
+void StarInitialize(void) {
     // 星の初期化
-    ld      ix, #_star
-    ld      de, #STAR_SIZE
-    ld      b, #STAR_N
-    10$:
-        call    _SystemGetRandom
-        ld      STAR_POSITION_X(ix), a
-        call    _SystemGetRandom
-        and     #0x03
-        inc     a
-        ld      STAR_SPEED(ix), a
-        add     ix, de
-    djnz    10$
-    ret
-    __endasm;
+    for (char *ix=star,b=STAR_N;b;b--,ix+=STAR_SIZE) {
+        ix[STAR_POSITION_X] = SystemGetRandom();
+        ix[STAR_SPEED] = (SystemGetRandom() & 3)+1;
+    }
 }
 // 星を更新する
-void StarUpdate(void) __naked {
-    __asm;
-    // 移動
-    ld      ix, #_star
-    ld      de, #STAR_SIZE
-    ld      b, #STAR_N
-    10$:
-        ld      a, STAR_POSITION_X(ix)
-        add     a, STAR_SPEED(ix)
-        ld      STAR_POSITION_X(ix), a
-        jr      nc, 11$
-            call    _SystemGetRandom
-            and     #0x03
-            inc     a
-            ld      STAR_SPEED(ix), a
-        11$:
-        add     ix, de
-    djnz    10$
-    ret
-    __endasm;
+void StarUpdate(void) {
+    for(char *ix=star,b=STAR_N;b;b--,ix+=STAR_SIZE) {
+        ix[STAR_POSITION_X] += ix[STAR_SPEED];
+        if(ix[STAR_POSITION_X] < ix[STAR_SPEED]) {
+            ix[STAR_SPEED] = (SystemGetRandom()&3)+1;
+        }
+    }
 }    
 // 星を描画する
-void StarRender(void) __naked {
-    __asm;
+void StarRender(void) {
     // パターンネームの描画
-    ld      ix, #_star
-    ld      hl, #(_appPatternName + 0x0040)
-    ld      d, #0x00
-    ld      b, #STAR_N
-    10$:
-        ld      a, STAR_POSITION_X(ix)
-        ld      c, a
-        rra
-        rra
-        rra
-        and     #0x1f
-        ld      e, a
-        add     hl, de
-        ld      a, (hl)
-        or      a
-        jr      nz, 11$
-            ld      a, c
-            and     #0x07
-            add     #0x58
-            ld      (hl), a
-        11$:
-        or      a
-        sbc     hl, de
-        ld      e, #0x20
-        add     hl, de
-        ld      e, #STAR_SIZE
-        add     ix, de
-    djnz    10$
-    ret
-    __endasm;
+    for(char* ix=star,*hl=appPatternName+0x40,b=STAR_N;b;b--,ix += STAR_SIZE) {
+        char e = (ix[STAR_POSITION_X] >> 3) & 0x1f;
+        hl += e;
+        if (*hl == 0) *hl = (ix[STAR_POSITION_X]&7)+0x58;
+        hl += -e + 0x20; 
+    }
 }

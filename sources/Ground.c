@@ -5,33 +5,21 @@
 #include "App.h"
 #include "Game.h"
 #include "Ground.h"
+#include "string.h"
 // 変数の定義
 char ground[0x0300];// 地面
 char groundGenerator[GROUND_GENERATOR_SIZE];// ジェネレータ
 static char groundGeneratorRow[0x18];
 // 地面を初期化する
 void GroundInitialize(void) {
-    __asm;    
-    // 地面の初期化
-    ld      hl, #(_ground + 0x0000)
-    ld      de, #(_ground + 0x0001)
-    ld      bc, #0x2ff
-    xor     a
-    ld      (hl), a
-    ldir
+    memset(ground,0,0x300);// 地面の初期化
     // ジェネレータの初期化
-    ld      ix, #_groundGenerator
-    xor     a
-    ld      GROUND_GENERATOR_UPPER_STATE(ix), a
-    ld      GROUND_GENERATOR_LOWER_STATE(ix), a
-    ld      GROUND_GENERATOR_UPPER_HEIGHT(ix), a
-    ld      GROUND_GENERATOR_LOWER_HEIGHT(ix), a
-    ld      a, #0x01
-    ld      GROUND_GENERATOR_UPPER_LENGTH(ix), a
-    ld      GROUND_GENERATOR_LOWER_LENGTH(ix), a
-    // 終了
-    ret
-    __endasm;
+    groundGenerator[GROUND_GENERATOR_UPPER_STATE] = 0;
+    groundGenerator[GROUND_GENERATOR_LOWER_STATE] = 0;
+    groundGenerator[GROUND_GENERATOR_UPPER_HEIGHT] = 0;
+    groundGenerator[GROUND_GENERATOR_LOWER_HEIGHT] = 0;
+    groundGenerator[GROUND_GENERATOR_UPPER_LENGTH] = 1;
+    groundGenerator[GROUND_GENERATOR_LOWER_LENGTH] = 1;
 }
 // 地面を更新する
 void GroundUpdate(void) __naked {
@@ -248,13 +236,6 @@ void GroundUpdate(void) __naked {
     __endasm;
 }
 // 地面を描画する
-void GroundRender(void) __naked {
-    __asm;
-    // パターンネームの描画
-    ld      hl, #_ground
-    ld      de, #_appPatternName
-    ld      bc, #0x0300
-    ldir
-    ret
-    __endasm;
+void GroundRender(void) {
+    memcpy(appPatternName,ground,0x300);// パターンネームの描画
 }

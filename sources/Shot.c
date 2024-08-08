@@ -6,6 +6,7 @@
 #include "Game.h"
 #include "Ship.h"
 #include "Shot.h"
+#include "string.h"
 // 定数の定義
 // ＳＥ
 static char const shotSe[] = "T1V13L0O6CO5F+O6CO5F+CO4F+";
@@ -13,20 +14,9 @@ static char const shotSe[] = "T1V13L0O6CO5F+O6CO5F+CO4F+";
 char shot[SHOT_SIZE * SHOT_N];// ショット
 static char shotTimer;// タイマ
 // ショットを初期化する
-void ShotInitialize(void)__naked {
-    __asm;
-    // ショットの初期化
-    ld      hl, #(_shot + 0x0000)
-    ld      de, #(_shot + 0x0001)
-    ld      bc, #(SHOT_SIZE * SHOT_N - 1)
-    xor     a
-    ld      (hl), a
-    ldir
-    // タイマの初期化
-    xor     a
-    ld      (_shotTimer), a
-    ret
-    __endasm;
+void ShotInitialize(void) {
+    memset(shot,0,SHOT_SIZE * SHOT_N); // ショットの初期化
+    shotTimer = 0; // タイマの初期化
 }
 // ショットを生成する
 void ShotGenerate(void)__naked {

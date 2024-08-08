@@ -6,6 +6,7 @@
 #include "Game.h"
 #include "Ship.h"
 #include "Shot.h"
+#include "string.h"
 // 定数の定義
 // 自機の初期値
 typedef union SHORT {
@@ -65,14 +66,7 @@ static char const shipSe[] =
 char ship[SHIP_SIZE];// 自機
 // 自機を初期化する
 void ShipInitialize(void) {
-    __asm;
-    // 自機の初期化
-    ld      hl, #_shipDefault
-    ld      de, #_ship
-    ld      bc, #SHIP_SIZE
-    ldir
-    ret
-    __endasm;
+    memcpy(ship,(void*)shipDefault,SHIP_SIZE);// 自機の初期化
 }
 static void ShipPlay(void);
 static void ShipBomb(void);
