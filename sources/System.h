@@ -90,8 +90,8 @@ void SystemResumeSound(void);
 // 乱数
 char SystemGetRandom(void);
 // 三角関数
-void SystemGetSin(void);
-void SystemGetCos(void);
+short SystemGetSin(char a);
+short SystemGetCos(char a);
 char SystemGetAtan2(short a);
 // デバッグ
 void SystemPutRegisterA(void);

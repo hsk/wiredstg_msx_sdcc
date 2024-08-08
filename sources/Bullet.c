@@ -6,314 +6,165 @@
 #include "Game.h"
 #include "Ship.h"
 #include "Bullet.h"
+#include "string.h"
 // 変数の定義
 char bullet[BULLET_SIZE * BULLET_N];// 弾
 char bulletN;
 static char bulletTimer;// タイマ
 // 弾を初期化する
-void BulletInitialize(void) __naked {
-    __asm;
+void BulletInitialize(void) {
     // 弾の初期化
-    ld      hl, #(_bullet + 0x0000)
-    ld      de, #(_bullet + 0x0001)
-    ld      bc, #(BULLET_SIZE * BULLET_N - 1)
-    xor     a
-    ld      (hl), a
-    ldir
-    ld      a, #0x07
-    ld      (_bulletN), a
-    // タイマの初期化
-    xor     a
-    ld      (_bulletTimer), a
-    ret
-    __endasm;
+    memset(bullet,0,BULLET_SIZE * BULLET_N);
+    bulletN = 7;
+    bulletTimer = 0;// タイマの初期化
+}
+static char* get_bullet(void) {
+    // 空の取得
+    for(char b = bulletN, *ix = bullet;b;b--,ix+=BULLET_SIZE)
+        if (ix[BULLET_STATE]==0) return ix;
+    return 0;
+}
+char gen1(short hl,char* ix) {
+    char h = hl>>8,l=hl&255;
+    // 生成の開始
+    ix[BULLET_POSITION_XD] = 0;
+    ix[BULLET_POSITION_XI] = h;
+    ix[BULLET_POSITION_YD] = 0;
+    ix[BULLET_POSITION_YI] = l;
+    h = (ship[SHIP_POSITION_X]>>1)-(h>>1);
+    l = (ship[SHIP_POSITION_Y]>>1)-(l>>1);
+    return SystemGetAtan2((h<<8)|l);
+}
+void gen2(char a,char* ix) {
+    if (a < 0x40) {
+        *(short*)&ix[BULLET_SPEED_YD] = SystemGetSin(a);
+        *(short*)&ix[BULLET_SPEED_XD] = SystemGetCos(a);
+        ix[BULLET_STATE] = 1;
+    } else if (a < 0x80) {
+        *(short*)&ix[BULLET_SPEED_YD] = SystemGetSin(a);
+        a = 0x80-a;
+        *(short*)&ix[BULLET_SPEED_XD] = SystemGetCos(a);
+        ix[BULLET_STATE] = 2;
+    } else if (a < 0xc0) {
+        a -= 0x80;
+        *(short*)&ix[BULLET_SPEED_YD] = SystemGetSin(a);
+        *(short*)&ix[BULLET_SPEED_XD] = SystemGetCos(a);
+        ix[BULLET_STATE] = 3;
+    } else {
+        a = -a;
+        *(short*)&ix[BULLET_SPEED_YD] = SystemGetSin(a);
+        *(short*)&ix[BULLET_SPEED_XD] = SystemGetCos(a);
+        ix[BULLET_STATE] = 4;
+    }
+}
+void gen9(char* ix) {
+    *(short*)&ix[BULLET_SPEED_XD] = (*(short*)&ix[BULLET_SPEED_XD])*2;
+    *(short*)&ix[BULLET_SPEED_YD] = (*(short*)&ix[BULLET_SPEED_YD])*2;
 }
 // 弾を生成する
-void BulletGenerate(short hl) __naked {
-    hl;
-    __asm;
-    // レジスタの保存
-    push    ix
-    push    iy
-    push hl
-    pop ix
-    // 自機の存在
-    ld      iy, #_ship
-    ld      a, SHIP_TYPE(iy)
-    cp      #SHIP_TYPE_VICVIPER
-    jp      nz, 99$
+void BulletGenerate(short hl) {
+    if (ship[SHIP_TYPE] != SHIP_TYPE_VICVIPER) return;// 自機の存在
     // 距離の取得
-    ld      a, SHIP_POSITION_X(iy)
-    sub     h
-    cp      #0x10
-    jp      c, 99$
-    cp      #0xf0
-    jp      nc, 99$
-    ld      a, SHIP_POSITION_Y(iy)
-    sub     l
-    cp      #0x10
-    jp      c, 99$
-    cp      #0xf0
-    jp      nc, 99$
-    // 空の取得
-    ld      ix, #_bullet
-    ld      de, #BULLET_SIZE
-    ld      a, (_bulletN)
-    ld      b, a
-    10$:
-        ld      a, BULLET_STATE(ix)
-        or      a
-        jr      z, 11$
-        add     ix, de
-    djnz    10$
-    jp      99$
-    // 生成の開始
-    11$:
-    xor     a
-    ld      BULLET_POSITION_XD(ix), a
-    ld      BULLET_POSITION_XI(ix), h
-    ld      BULLET_POSITION_YD(ix), a
-    ld      BULLET_POSITION_YI(ix), l
-    ld      a, SHIP_POSITION_X(iy)
-    srl     a
-    srl     h
-    sub     h
-    ld      h, a
-    ld      a, SHIP_POSITION_Y(iy)
-    srl     a
-    srl     l
-    sub     l
-    ld      l, a
-    call    _SystemGetAtan2
-    cp      #0x40
-    jr      nc, 12$
-        call    _SystemGetCos
-        ld      BULLET_SPEED_XD(ix), l
-        ld      BULLET_SPEED_XI(ix), h
-        call    _SystemGetSin
-        ld      BULLET_SPEED_YD(ix), l
-        ld      BULLET_SPEED_YI(ix), h
-        ld      a, #0x01
-        ld      BULLET_STATE(ix), a
-        jr      18$
-    12$:
-    cp      #0x80
-    jr      nc, 13$
-        call    _SystemGetSin
-        ld      BULLET_SPEED_YD(ix), l
-        ld      BULLET_SPEED_YI(ix), h
-        ld      b, a
-        ld      a, #0x80
-        sub     b
-        call    _SystemGetCos
-        ld      BULLET_SPEED_XD(ix), l
-        ld      BULLET_SPEED_XI(ix), h
-        ld      a, #0x02
-        ld      BULLET_STATE(ix), a
-        jr      18$
-    13$:
-    cp      #0xc0
-    jr      nc, 14$
-        sub     #0x80
-        call    _SystemGetCos
-        ld      BULLET_SPEED_XD(ix), l
-        ld      BULLET_SPEED_XI(ix), h
-        call    _SystemGetSin
-        ld      BULLET_SPEED_YD(ix), l
-        ld      BULLET_SPEED_YI(ix), h
-        ld      a, #0x03
-        ld      BULLET_STATE(ix), a
-        jr      18$
-    14$:
-        ld      b, a
-        xor     a
-        sub     b
-        call    _SystemGetCos
-        ld      BULLET_SPEED_XD(ix), l
-        ld      BULLET_SPEED_XI(ix), h
-        call    _SystemGetSin
-        ld      BULLET_SPEED_YD(ix), l
-        ld      BULLET_SPEED_YI(ix), h
-        ld      a, #0x04
-        ld      BULLET_STATE(ix), a
-    //   jr      18$
-        // 速度の設定
-    18$:
-    ld      l, BULLET_SPEED_XD(ix)
-    ld      h, BULLET_SPEED_XI(ix)
-    add     hl, hl
-    ld      BULLET_SPEED_XD(ix), l
-    ld      BULLET_SPEED_XI(ix), h
-    ld      l, BULLET_SPEED_YD(ix)
-    ld      h, BULLET_SPEED_YI(ix)
-    add     hl, hl
-    ld      BULLET_SPEED_YD(ix), l
-    ld      BULLET_SPEED_YI(ix), h
-    // 生成の完了
-    99$:
-    // レジスタの復帰
-    pop     iy
-    pop     ix
-    // 終了
-    ret
-    __endasm;
+    char a = ship[SHIP_POSITION_X]-(hl>>8);
+    if (a < 0x10 || a >= 0xf0) return;
+    a = ship[SHIP_POSITION_Y] - (hl&255);
+    if (a < 0x10 || a >= 0xf0) return;
+    char* ix = get_bullet();// 空の取得
+    if (ix==0) return;
+    gen2(gen1(hl,ix),ix);
+    gen9(ix);
 }
 // 弾を更新する
-void BulletUpdate(void) __naked {
-    __asm;
-    // レジスタの保存
-    // 弾の走査
-    ld      ix, #_bullet
-    ld      a, (_bulletN)
-    ld      b, a
-    10$:// for(;;) {
-        // for(;;) {
-        ld      a, BULLET_STATE(ix)
-        or      a
-        jp      z, 19$// continue
+void BulletUpdate(void) {
+    for(char *ix = bullet, b = bulletN;b;ix += BULLET_SIZE,b--) {// 弾の走査
+        char a = ix[BULLET_STATE];
+        if (a == 0) continue;
         // 弾の移動
-        dec     a
-        jr      nz, 11$
-            ld      l, BULLET_POSITION_XD(ix)
-            ld      h, BULLET_POSITION_XI(ix)
-            ld      e, BULLET_SPEED_XD(ix)
-            ld      d, BULLET_SPEED_XI(ix)
-            add     hl, de
-            jp      c, 18$// break
-            ld      BULLET_POSITION_XD(ix), l
-            ld      BULLET_POSITION_XI(ix), h
-            ld      l, BULLET_POSITION_YD(ix)
-            ld      h, BULLET_POSITION_YI(ix)
-            ld      e, BULLET_SPEED_YD(ix)
-            ld      d, BULLET_SPEED_YI(ix)
-            add     hl, de
-            jp      c, 18$// break
-            ld      BULLET_POSITION_YD(ix), l
-            ld      BULLET_POSITION_YI(ix), h
-            jp      19$// continue
-        11$:
-        dec     a
-        jr      nz, 12$
-            ld      l, BULLET_POSITION_XD(ix)
-            ld      h, BULLET_POSITION_XI(ix)
-            ld      e, BULLET_SPEED_XD(ix)
-            ld      d, BULLET_SPEED_XI(ix)
-            or      a
-            sbc     hl, de
-            jr      c, 18$// break
-            ld      BULLET_POSITION_XD(ix), l
-            ld      BULLET_POSITION_XI(ix), h
-            ld      l, BULLET_POSITION_YD(ix)
-            ld      h, BULLET_POSITION_YI(ix)
-            ld      e, BULLET_SPEED_YD(ix)
-            ld      d, BULLET_SPEED_YI(ix)
-            add     hl, de
-            jr      c, 18$// break
-            ld      BULLET_POSITION_YD(ix), l
-            ld      BULLET_POSITION_YI(ix), h
-            jr      19$// continue
-        12$:
-        dec     a
-        jr      nz, 13$
-            ld      l, BULLET_POSITION_XD(ix)
-            ld      h, BULLET_POSITION_XI(ix)
-            ld      e, BULLET_SPEED_XD(ix)
-            ld      d, BULLET_SPEED_XI(ix)
-            or      a
-            sbc     hl, de
-            jr      c, 18$// break
-            ld      BULLET_POSITION_XD(ix), l
-            ld      BULLET_POSITION_XI(ix), h
-            ld      l, BULLET_POSITION_YD(ix)
-            ld      h, BULLET_POSITION_YI(ix)
-            ld      e, BULLET_SPEED_YD(ix)
-            ld      d, BULLET_SPEED_YI(ix)
-            or      a
-            sbc     hl, de
-            jr      c, 18$// break
-            ld      BULLET_POSITION_YD(ix), l
-            ld      BULLET_POSITION_YI(ix), h
-            jr      19$// continue
-        13$:
-            ld      l, BULLET_POSITION_XD(ix)
-            ld      h, BULLET_POSITION_XI(ix)
-            ld      e, BULLET_SPEED_XD(ix)
-            ld      d, BULLET_SPEED_XI(ix)
-            add     hl, de
-            jr      c, 18$// break
-            ld      BULLET_POSITION_XD(ix), l
-            ld      BULLET_POSITION_XI(ix), h
-            ld      l, BULLET_POSITION_YD(ix)
-            ld      h, BULLET_POSITION_YI(ix)
-            ld      e, BULLET_SPEED_YD(ix)
-            ld      d, BULLET_SPEED_YI(ix)
-            or      a
-            sbc     hl, de
-            jr      c, 18$// break
-            ld      BULLET_POSITION_YD(ix), l
-            ld      BULLET_POSITION_YI(ix), h
-            jr      19$// continue
-        // 弾の削除
-        18$: // }
-            xor     a
-            ld      BULLET_STATE(ix), a
-            // 次の弾へ
-        19$:
-            ld      de, #BULLET_SIZE
-            add     ix, de
-            dec     b
-    jp      nz, 10$ // }
-    // タイマの更新
-    ld      hl, #_bulletTimer
-    inc     (hl)
-    // レジスタの復帰
-    // 終了
-    ret
-    __endasm;
+        if (--a == 0) {
+            u16 hl = *(u16*)&ix[BULLET_POSITION_XD];
+            u16 de = *(u16*)&ix[BULLET_SPEED_XD];
+            if ((hl>>1)+(de>>1) >= 0x8000-2) {
+                ix[BULLET_STATE] = 0;// 弾の削除
+                continue;
+            }
+            *(u16*)&ix[BULLET_POSITION_XD] = hl+de;
+            hl = *(u16*)&ix[BULLET_POSITION_YD];
+            de = *(u16*)&ix[BULLET_SPEED_YD];
+            if ((hl>>1)+(de>>1) >= 0x8000-2) {
+                ix[BULLET_STATE] = 0;// 弾の削除
+                continue;
+            }
+            *(u16*)&ix[BULLET_POSITION_YD] = hl+de;
+            continue;
+        }
+        if (--a == 0) {
+            u16 hl = *(u16*)&ix[BULLET_POSITION_XD];
+            u16 de = *(u16*)&ix[BULLET_SPEED_XD];
+            if (hl<de) {
+                ix[BULLET_STATE] = 0;// 弾の削除
+                continue;
+            }
+            *(u16*)&ix[BULLET_POSITION_XD] = hl-de;
+            hl = *(u16*)&ix[BULLET_POSITION_YD];
+            de = *(u16*)&ix[BULLET_SPEED_YD];
+            if ((hl>>1)+(de>>1) >= 0x8000-2) {
+                ix[BULLET_STATE] = 0;// 弾の削除
+                continue;
+            }
+            *(u16*)&ix[BULLET_POSITION_YD] = hl+de;
+            continue;
+        }
+        if (--a == 0) {
+            u16 hl = *(u16*)&ix[BULLET_POSITION_XD];
+            u16 de = *(u16*)&ix[BULLET_SPEED_XD];
+            if (hl<de) {
+                ix[BULLET_STATE] = 0;// 弾の削除
+                continue;
+            }
+            *(u16*)&ix[BULLET_POSITION_XD] = hl-de;
+            hl = *(u16*)&ix[BULLET_POSITION_YD];
+            de = *(u16*)&ix[BULLET_SPEED_YD];
+            if (hl<de) {
+                ix[BULLET_STATE] = 0;// 弾の削除
+                continue;
+            }
+            *(u16*)&ix[BULLET_POSITION_YD] = hl-de;
+            continue;
+        }
+        {
+            u16 hl = *(u16*)&ix[BULLET_POSITION_XD];
+            u16 de = *(u16*)&ix[BULLET_SPEED_XD];
+            if ((hl>>1)+(de>>1) >= 0x8000-2) {
+                ix[BULLET_STATE] = 0;// 弾の削除
+                continue;
+            }
+            *(u16*)&ix[BULLET_POSITION_XD] = hl+de;
+            hl = *(u16*)&ix[BULLET_POSITION_YD];
+            de = *(u16*)&ix[BULLET_SPEED_YD];
+            if (hl<de) {
+                ix[BULLET_STATE] = 0;// 弾の削除
+                continue;
+            }
+            *(u16*)&ix[BULLET_POSITION_YD] = hl-de;
+            continue;
+        }
+    }
+    bulletTimer++;// タイマの更新
 }
 // 弾を描画する
-void BulletRender(void) __naked {
-    __asm;    
+void BulletRender(void) {
     // スプライトの描画
-    ld      ix, #_bullet
-    ld      hl, #_sprite + GAME_SPRITE_BULLET
-    ld      a, (_bulletTimer)
-    and     #0x0f
-    add     a, a
-    add     a, a
-    ld      c, a
-    ld      a, (_bulletN)
-    ld      b, a
-    10$:
-        ld      a, BULLET_STATE(ix)
-        or      a
-        jr      z, 19$
-            ld      hl, #(_sprite + GAME_SPRITE_BULLET)
-            ld      e, c
-            ld      d, #0x00
-            add     hl, de
-            ld      a, #0x04
-            add     a, c
-            and     #0x3f
-            ld      c, a
-            ld      a, BULLET_POSITION_YI(ix)
-            sub     #0x09
-            ld      (hl), a
-            inc     hl
-            ld      a, BULLET_POSITION_XI(ix)
-            sub     #0x08
-            ld      (hl), a
-            inc     hl
-            ld      a, #0x3c
-            ld      (hl), a
-            inc     hl
-            ld      a, (_appColor)
-            ld      (hl), a
-            inc     hl
-        19$:
-        ld      de, #BULLET_SIZE
-        add     ix, de
-    djnz    10$
-    ret
-    __endasm;
+    char* hl = sprite + GAME_SPRITE_BULLET;
+    char c = (bulletTimer & 0x0f)<<2;
+    for (char b = bulletN,*ix=bullet;b;ix+=BULLET_SIZE,b--) {
+        if (ix[BULLET_STATE]) {
+            char* hl = sprite + GAME_SPRITE_BULLET + c;
+            *hl++ = ix[BULLET_POSITION_YI] - 0x09;
+            *hl++ = ix[BULLET_POSITION_XI] - 0x08;
+            *hl++ = 0x3c;
+            *hl++ = appColor;
+            c = (c+0x04)&0x3f;
+        }
+    }
 }
+

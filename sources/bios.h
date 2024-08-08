@@ -1,4 +1,9 @@
 // bios.h : BIOS コール
+#include <stdint.h>
+typedef uint8_t u8;
+typedef int8_t s8;
+typedef uint16_t u16;
+typedef uint16_t s16;
 // MAIN-ROM コールアドレス
 #define CHKRAM      0x0000          /* RAM をチェックし、システム用の RAM スロットをセット */
 #define SYNCHR      0x0008          /* [HL] の 1 文字が指定した文字かどうかチェック */
