@@ -43,17 +43,6 @@ void EnemyDuckerGenerate(void) {
     iy[ENEMY_GENERATOR_TYPE] = 0;
     iy[ENEMY_GENERATOR_STATE] = 0;
 }
-static void up0(char* ix) {
-    // 初期化の開始
-    if (ix[ENEMY_STATE]==0){
-        ix[ENEMY_PARAM_0] = 0;// パラメータの設定
-        ix[ENEMY_PARAM_1] = 4;
-        ix[ENEMY_PARAM_2] = ((ix[ENEMY_TYPE]-ENEMY_TYPE_DUCKER_UPPER)<<5)+0xc0;
-        ix[ENEMY_SHOT] = 0x10;// ショットの設定
-        ix[ENEMY_TIMER] = (SystemGetRandom()&0x3f)+0x20;// タイマの設定
-        ix[ENEMY_STATE] = (ix[ENEMY_POSITION_X]>0x80) ? 2 : 3;// 初期化の完了
-    }
-}
 static void up1(char a,char* ix) {
     ix[ENEMY_POSITION_X] = a;
     ix[ENEMY_ANIMATION] = ((ix[ENEMY_TIMER] & 0x04)>>1) + ix[ENEMY_PARAM_2];
@@ -99,7 +88,15 @@ static void up4(char* ix) {
 
 // 敵を更新する
 void EnemyDuckerUpdate(char* ix) {
-    up0(ix);
+    // 初期化の開始
+    if (ix[ENEMY_STATE]==0){
+        ix[ENEMY_PARAM_0] = 0;// パラメータの設定
+        ix[ENEMY_PARAM_1] = 4;
+        ix[ENEMY_PARAM_2] = ((ix[ENEMY_TYPE]-ENEMY_TYPE_DUCKER_UPPER)<<5)+0xc0;
+        ix[ENEMY_SHOT] = 0x10;// ショットの設定
+        ix[ENEMY_TIMER] = (SystemGetRandom()&0x3f)+0x20;// タイマの設定
+        ix[ENEMY_STATE] = (ix[ENEMY_POSITION_X]>0x80) ? 2 : 3;// 初期化の完了
+    }
     do {
         char a = ix[ENEMY_STATE];
         if (a==1) {// 移動（→）

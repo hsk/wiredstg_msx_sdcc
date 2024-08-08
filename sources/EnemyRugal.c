@@ -40,7 +40,8 @@ void EnemyRugalGenerate(void) {
     iy[ENEMY_GENERATOR_TYPE] = 0;
     iy[ENEMY_GENERATOR_STATE] = 0;
 }
-static void up0(char* ix) {
+// 敵を更新する
+void EnemyRugalUpdate(char* ix) {
     // 初期化の開始
     if (ix[ENEMY_STATE]==0){
         ix[ENEMY_PARAM_0] = 0;// パラメータの設定
@@ -51,10 +52,6 @@ static void up0(char* ix) {
         ix[ENEMY_TIMER] = 0x40;// タイマの設定
         ix[ENEMY_STATE]++;// 初期化の完了
     }
-}
-// 敵を更新する
-void EnemyRugalUpdate(char* ix) {
-    up0(ix);
     // 移動
     for(;;) {
         if (ix[ENEMY_TYPE] == ENEMY_TYPE_RUGAL_FRONT) {

@@ -260,7 +260,7 @@ static void GameHitCheck(void) {
         } else if(ground[de]==0)continue;
         ix[SHOT_STATE] = 0;
     }
-    #if 0
+    #if 1
     // 弾のチェック
     for(char b=bulletN,*ix=bullet;b;b--,ix+=BULLET_SIZE) {
         if (ix[BULLET_STATE]==0)continue;
@@ -279,7 +279,8 @@ static void GameHitCheck(void) {
     }
     // 自機のチェック
     if (ship[SHIP_TYPE] != SHIP_TYPE_VICVIPER) return;
-    unsigned short tmp = ((unsigned short)(ship[SHIP_POSITION_Y]&0xf8))*4+(ship[SHIP_POSITION_X]>>3);
+    u16 tmp =
+        ((ship[SHIP_POSITION_Y]&0xf8)<<2)+(ship[SHIP_POSITION_X]>>3);
     if (enemyCollision[tmp]==0 && ground[tmp]==0) return;
     //if(--ship[SHIP_HP]) return;
     ship[SHIP_TYPE] = SHIP_TYPE_BOMB;

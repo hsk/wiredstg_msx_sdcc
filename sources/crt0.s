@@ -4,7 +4,7 @@
     .globl  _main
 ; HEADER 領域（プログラムのエントリポイント）
     .area   _HEADER (ABS)
-    .org    0x8400
+    .org    0x82d0
 ; ブート
 boot:
     ld      hl, #stackfinal
@@ -35,7 +35,7 @@ gsfinal:
 data:
 ; スタック領域
 stack:
-    .ds     1024*3
+    .ds     1024*4
 stackfinal:
 ; DATA 領域の末端
     .area   _DATAFINAL

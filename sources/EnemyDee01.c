@@ -51,14 +51,6 @@ void EnemyDee01Generate(void) {
     iy[ENEMY_GENERATOR_TYPE] = 0;
     iy[ENEMY_GENERATOR_STATE] = 0;
 }
-static void up0(char* ix) {
-    // 初期化の開始
-    if (ix[ENEMY_STATE]==0) {
-        ix[ENEMY_PARAM_0] = 0;// パラメータの設定
-        ix[ENEMY_SHOT] = (SystemGetRandom()&0x3f)+0x40;// ショットの設定
-        ix[ENEMY_STATE]++;// 初期化の完了
-    }
-}
 static void up1(char* ix) {
     char a;
     char h = (ship[SHIP_POSITION_X]>>1)-(ix[ENEMY_POSITION_X]>>1);
@@ -113,7 +105,12 @@ static void up4(char* ix) {
 
 // 敵を更新する
 void EnemyDee01Update(char* ix) {
-    up0(ix);
+    // 初期化の開始
+    if (ix[ENEMY_STATE]==0) {
+        ix[ENEMY_PARAM_0] = 0;// パラメータの設定
+        ix[ENEMY_SHOT] = (SystemGetRandom()&0x3f)+0x40;// ショットの設定
+        ix[ENEMY_STATE]++;// 初期化の完了
+    }
     // 移動（→）
     if (gameScroll==0) {
         if (ix[ENEMY_POSITION_X]>=256-8) {

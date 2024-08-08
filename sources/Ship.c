@@ -72,201 +72,77 @@ static void ShipPlay(void);
 static void ShipBomb(void);
 // 自機を更新する
 void ShipUpdate(void) {
-    __asm;
-    // 自機の取得
-    ld      ix, #_ship
+    char a = ship[SHIP_TYPE];
     // 種類別の処理
-    ld      a, SHIP_TYPE(ix)
-    cp      #SHIP_TYPE_VICVIPER
-    jr      nz, 10$
-        call    _ShipPlay
-        jr      19$
-    10$:
-        cp      #SHIP_TYPE_BOMB
-        jr      nz, 19$
-        call    _ShipBomb
-        jr      19$
-    19$:    
+    if (a == SHIP_TYPE_VICVIPER)  ShipPlay();
+    else if (a == SHIP_TYPE_BOMB) ShipBomb();
     // スプライトの更新
-    ld      hl, (_ship + SHIP_SPRITE_0)
-    ld      de, (_ship + SHIP_SPRITE_1)
-    ld      (_ship + SHIP_SPRITE_0), de
-    ld      (_ship + SHIP_SPRITE_1), hl
-    ret
-    __endasm;
+    short hl = *(short*)&ship[SHIP_SPRITE_0];
+    *(short*)&ship[SHIP_SPRITE_0] = *(short*)&ship[SHIP_SPRITE_1];
+    *(short*)&ship[SHIP_SPRITE_1] = hl;
 } 
 // 自機を操作する
 static void ShipPlay(void) {
-    __asm;
     // スピードアップ
-    ld      a, (_input + INPUT_BUTTON_SHIFT)
-    dec     a
-    jr      nz, 19$
-        ld      a, SHIP_SPEED(ix)
-        inc     a
-        cp      #0x05
-        jr      c, 10$
-            ld      a, #0x01
-        10$:
-        ld      SHIP_SPEED(ix), a
-    19$:
+    if (input[INPUT_BUTTON_SHIFT]==1) {
+        if(++ship[SHIP_SPEED] == 5) ship[SHIP_SPEED] = 1;
+    }
     // ↑↓の移動
-    ld      a, (_input + INPUT_KEY_UP)
-    or      a
-    jr      z, 21$
-        ld      a, SHIP_POSITION_Y(ix)
-        sub     SHIP_SPEED(ix)
-        cp      #0x10
-        jr      nc, 20$
-            ld      a, #0x10
-        20$:
-        ld      SHIP_POSITION_Y(ix), a
-        ld      a, #0x02
-        jr      23$
-    21$:
-        ld      a, (_input + INPUT_KEY_DOWN)
-        or      a
-        jr      z, 23$
-            ld      a, SHIP_POSITION_Y(ix)
-            add     SHIP_SPEED(ix)
-            cp      #0xb7
-            jr      c, 22$
-                ld      a, #0xb7
-    22$:
-        ld      SHIP_POSITION_Y(ix), a
-        ld      a, #0x01
-    23$:
-    ld      SHIP_ANIMATION(ix), a
+    if (input[INPUT_KEY_UP]) {
+        ship[SHIP_POSITION_Y] -= ship[SHIP_SPEED];
+        if (ship[SHIP_POSITION_Y]<0x10)ship[SHIP_POSITION_Y]=0x10;
+        ship[SHIP_ANIMATION] = 0x02;
+    } else if (input[INPUT_KEY_DOWN]) {
+        ship[SHIP_POSITION_Y] += ship[SHIP_SPEED];
+        if (ship[SHIP_POSITION_Y]>0xb7)ship[SHIP_POSITION_Y]=0xb7;
+        ship[SHIP_ANIMATION] = 0x01;
+    }
     // ←→の移動
-    ld      a, (_input + INPUT_KEY_LEFT)
-    or      a
-    jr      z, 25$
-    ld      a, SHIP_POSITION_X(ix)
-    sub     SHIP_SPEED(ix)
-    cp      #0x0c
-    jr      nc, 24$
-        ld      a, #0x0c
-    24$:
-        ld      SHIP_POSITION_X(ix), a
-        jr      27$
-    25$:
-        ld      a, (_input + INPUT_KEY_RIGHT)
-        or      a
-        jr      z, 27$
-            ld      a, SHIP_POSITION_X(ix)
-            add     SHIP_SPEED(ix)
-            cp      #0xf6
-            jr      c, 26$
-                ld      a, #0xf6
-    26$:
-        ld      SHIP_POSITION_X(ix), a
-    27$:
+    if (input[INPUT_KEY_LEFT]) {
+        ship[SHIP_POSITION_X] -= ship[SHIP_SPEED];
+        if (ship[SHIP_POSITION_X]<0xc)ship[SHIP_POSITION_X]=0xc;
+    } else if (input[INPUT_KEY_RIGHT]) {
+        ship[SHIP_POSITION_X] += ship[SHIP_SPEED];
+        if (ship[SHIP_POSITION_X]>0xf6)ship[SHIP_POSITION_X]=0xf6;
+    }
     // ショット
-    ld      a, (_input + INPUT_BUTTON_SPACE)
-    dec     a
-    jr      nz, 39$
-        call    _ShotGenerate
-        ld      l, SHIP_SHOT_L(ix)
-        ld      h, SHIP_SHOT_H(ix)
-        inc     hl
-        ld      SHIP_SHOT_L(ix), l
-        ld      SHIP_SHOT_H(ix), h
-    39$:
-    ret
-    __endasm;
+    if (input[INPUT_BUTTON_SPACE] == 1) {
+        ShotGenerate();
+        (*(short*)&ship[SHIP_SHOT_L])++;
+    }
 }
 // 自機が爆発する
 static void ShipBomb(void) {
-    __asm;
     // 初期化の開始
-    ld      a, SHIP_STATE(ix)
-    or      a
-    jr      nz, 09$
-        // アニメーションの設定
-        ld      a, #0x03
-        ld      SHIP_ANIMATION(ix), a
-        // タイマの設定
-        ld      a, #0x04
-        ld      SHIP_TIMER(ix), a
-        // ＳＥの再生
-        ld      hl, #_shipSe
-        ld      (_soundRequest + 0x0006), hl
-        // 初期化の完了
-        inc     SHIP_STATE(ix)
-    09$:
+    if (ship[SHIP_STATE]==0) {
+        ship[SHIP_ANIMATION] = 3;// アニメーションの設定
+        ship[SHIP_TIMER] = 4;// タイマの設定
+        soundRequest[3] = (void*)shipSe;// ＳＥの再生
+        ship[SHIP_STATE]++;// 初期化の完了
+    }
     // アニメーションの更新
-    dec     SHIP_TIMER(ix)
-    jr      nz, 19$
-    ld      a, #0x04
-    ld      SHIP_TIMER(ix), a
-    inc     SHIP_ANIMATION(ix)
-    ld      a, SHIP_ANIMATION(ix)
-    cp      #0x0b
-    jr      nz, 19$
-        // 自機の削除
-        xor     a
-        ld      SHIP_TYPE(ix), a
-        ld      SHIP_STATE(ix), a
-    19$:
-    ret
-    __endasm;
+    if (--ship[SHIP_TIMER] == 0) {
+        ship[SHIP_TIMER] = 4;
+        if (++ship[SHIP_ANIMATION] == 0x0b) {
+            // 自機の削除
+            ship[SHIP_TYPE] = 0;
+            ship[SHIP_STATE] = 0;
+        }
+    }
 }
 // 自機を描画する
 void ShipRender(void) {
-    __asm;
     // スプライトの描画
-    ld      ix, #_ship
-    ld      a, SHIP_TYPE(ix)
-    or      a
-    jr      z, 9$
-        ld      a, SHIP_ANIMATION(ix)
-        add     a, a
-        add     a, a
-        add     a, a
-        ld      e, a
-        ld      d, #0x00
-        ld      hl, #_shipSprite
-        add     hl, de
-        ex      de, hl
-        ld      hl, (_ship + SHIP_SPRITE_0)
-        ld      a, (_appColor)
-        ld      c, a
-        ld      a, (de)
-        add     a, SHIP_POSITION_Y(ix)
-        ld      (hl), a
-        inc     hl
-        inc     de
-        ld      a, (de)
-        add     a, SHIP_POSITION_X(ix)
-        ld      (hl), a
-        inc     hl
-        inc     de
-        ld      a, (de)
-        ld      (hl), a
-        inc     hl
-        inc     de
-        ld      (hl), c
-        inc     hl
-        inc     de
-        //   ld      hl, (_ship + SHIP_SPRITE_1)
-        ld      a, (de)
-        add     a, SHIP_POSITION_Y(ix)
-        ld      (hl), a
-        inc     hl
-        inc     de
-        ld      a, (de)
-        add     a, SHIP_POSITION_X(ix)
-        ld      (hl), a
-        inc     hl
-        inc     de
-        ld      a, (de)
-        ld      (hl), a
-        inc     hl
-        inc     de
-        ld      (hl), c
-        //inc     hl
-        //inc     de
-    9$:
-    ret
-    __endasm;
+    if (ship[SHIP_TYPE]==0)return;
+    // スプライトの描画
+    char *de = &shipSprite[ship[SHIP_ANIMATION]<<3];
+    char *hl = *(short*)&ship[SHIP_SPRITE_0];
+    *hl++ = *de++ + ship[SHIP_POSITION_Y];
+    *hl++ = *de++ + ship[SHIP_POSITION_X];
+    *hl++ = *de++;
+    *hl++ = appColor; de++;
+    *hl++ = *de++ + ship[SHIP_POSITION_Y];
+    *hl++ = *de++ + ship[SHIP_POSITION_X];
+    *hl++ = *de++;
+    *hl   = appColor;
 }

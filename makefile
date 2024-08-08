@@ -50,7 +50,7 @@ CFLAGS			=	-mz80 --opt-code-speed -I$(INCDIR) -I.
 LD				=	sdcc
 
 # linker flags
-LDFLAGS			=	-mz80 --no-std-crt0 --nostdinc --nostdlib --code-loc 0x8420 --data-loc 0xd000
+LDFLAGS			=	-mz80 --no-std-crt0 --nostdinc --nostdlib --code-loc 0x82f0 --data-loc 0xd000
 
 # suffix rules
 #
