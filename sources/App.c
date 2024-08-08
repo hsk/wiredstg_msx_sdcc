@@ -154,17 +154,7 @@ void AppUpdate(void) __naked {
         cp      #APP_STATE_GAME_UPDATE
         jr      nz, 3$
         // レジスタの保存
-        push    hl
-        push    bc
-        push    de
-        push    ix
-        push    iy
         call    _GameUpdate
-        pop     iy
-        pop     ix
-        pop     de
-        pop     bc
-        pop     hl
         //jr      9$
         // 更新の終了
     9$:

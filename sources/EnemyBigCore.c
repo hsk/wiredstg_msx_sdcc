@@ -54,193 +54,84 @@ void EnemyBigCoreGenerate(void) {
     enemyGenerator[ENEMY_GENERATOR_TYPE] = 0;// 生成の完了
     enemyGenerator[ENEMY_GENERATOR_STATE] = 0;
 }
+
+static void up1(char* ix) {
+    if (ix[ENEMY_POSITION_Y]>=0x61) ix[ENEMY_POSITION_Y] -= 4;
+    else if (ix[ENEMY_POSITION_X]>=0x39) ix[ENEMY_POSITION_X] -= 4;
+    else ix[ENEMY_STATE] = 2;
+}
+static void up2(char* ix) {
+    EnemyBeamGenerate((ix[ENEMY_POSITION_X]<<8)|ix[ENEMY_POSITION_Y]);
+    ix[ENEMY_TIMER] = 0x20;
+    ix[ENEMY_STATE] = 3;
+}
+static void up3(char*ix) {
+    if (--ix[ENEMY_TIMER] == 0) {
+        char c = (SystemGetRandom()&0x18) + 0x18;
+        char sy = ship[SHIP_POSITION_Y];
+        char ey = ix[ENEMY_POSITION_Y];
+        if (ey > 0x88 || ey >= 0x38 && (ey >= sy && (ey==sy || ey >= 0x64))) {
+            ey -= c;
+            if (ey < 0x28) ey = 0x28;
+            ix[ENEMY_TIMER] = ey;
+            ix[ENEMY_STATE] = 4;
+        } else {
+            ey += c;
+            if (ey > 0x98) ey = 0x98;
+            ix[ENEMY_TIMER] = ey;
+            ix[ENEMY_STATE] = 5;
+        }
+    }
+}
+static void up4(char*ix) {
+    ix[ENEMY_POSITION_Y] -= 4;
+    if (ix[ENEMY_POSITION_Y] < ix[ENEMY_TIMER]){
+        ix[ENEMY_POSITION_Y] = ix[ENEMY_TIMER];
+        ix[ENEMY_STATE] = 2;
+    }
+}
+static void up5(char*ix) {
+    ix[ENEMY_POSITION_Y] += 4;
+    if (ix[ENEMY_POSITION_Y]>=ix[ENEMY_TIMER]){
+        ix[ENEMY_POSITION_Y] = ix[ENEMY_TIMER];
+        ix[ENEMY_STATE] = 2;
+    }
+}
 // 敵を更新する／コア
-void EnemyBigCoreUpdateCore(char* ix) __naked {
-    ix;
-    __asm;
-    push ix
-    push hl
-    pop ix
-    // 初期化の開始
-    ld      a, ENEMY_STATE(ix)
-    or      a
-    jr      nz, 09$
-        // 初期化の完了
-        inc     ENEMY_STATE(ix)
-    09$:
-        // 登場
-        ld      a, ENEMY_STATE(ix)
-        dec     a
-        jr      nz, 19$
-        ld      a, ENEMY_POSITION_Y(ix)
-        cp      #0x61
-        jr      c, 10$
-        sub     #0x04
-        ld      ENEMY_POSITION_Y(ix), a
-        jp      nc, 90$
-    10$:
-        ld      a, ENEMY_POSITION_X(ix)
-        cp      #0x39
-        jr      c, 11$
-        sub     #0x04
-        ld      ENEMY_POSITION_X(ix), a
-        jp      nc, 90$
-    11$:
-        ld      a, #0x02
-        ld      ENEMY_STATE(ix), a
-        jp      90$
-    19$:
-        // ビームを撃つ
-        dec     a
-        jr      nz, 29$
-        ld      h, ENEMY_POSITION_X(ix)
-        ld      l, ENEMY_POSITION_Y(ix)
-        call    _EnemyBeamGenerate
-        ld      a, #0x20
-        ld      ENEMY_TIMER(ix), a
-        ld      a, #0x03
-        ld      ENEMY_STATE(ix), a
-        jp      90$
-    29$:
-        // 待機
-        dec     a
-        jr      nz, 39$
-        dec     ENEMY_TIMER(ix)
-        jr      nz, 90$
-        call    _SystemGetRandom
-        and     #0x18
-        add     a, #0x18
-        ld      c, a
-        ld      a, (_ship + SHIP_POSITION_Y)
-        ld      b, a
-        ld      a, ENEMY_POSITION_Y(ix)
-        cp      #0x88
-        jr      nc, 30$
-        cp      #0x38
-        jr      c, 32$
-        cp      b
-        jr      c, 32$
-        jr      nz, 30$
-        cp      #0x64
-        jr      c, 32$
-    //   jr      30$
-    30$:
-        sub     c
-        cp      #0x28
-        jr      nc, 31$
-        ld      a, #0x28
-    31$:
-        ld      ENEMY_TIMER(ix), a
-        ld      a, #0x04
-        ld      ENEMY_STATE(ix), a
-        jr      90$
-    32$:
-        add     a, c
-        cp      #0x98
-        jr      c, 33$
-        ld      a, #0x98
-    33$:
-        ld      ENEMY_TIMER(ix), a
-        ld      a, #0x05
-        ld      ENEMY_STATE(ix), a
-        jr      90$
-    39$:
-        // 移動↑
-        dec     a
-        jr      nz, 49$
-        ld      a, ENEMY_POSITION_Y(ix)
-        sub     #0x04
-        ld      ENEMY_POSITION_Y(ix), a
-        cp      ENEMY_TIMER(ix)
-        jr      nc, 90$
-        ld      a, ENEMY_TIMER(ix)
-        ld      ENEMY_POSITION_Y(ix), a
-        ld      a, #0x02
-        ld      ENEMY_STATE(ix), a
-        jr      90$
-    49$:
-        // 移動↓
-    //   dec     a
-    //   jr      nz, 59$
-        ld      a, ENEMY_POSITION_Y(ix)
-        add     a, #0x04
-        ld      ENEMY_POSITION_Y(ix), a
-        cp      ENEMY_TIMER(ix)
-        jr      c, 90$
-        ld      a, ENEMY_TIMER(ix)
-        ld      ENEMY_POSITION_Y(ix), a
-        ld      a, #0x02
-        ld      ENEMY_STATE(ix), a
-    //   jr      90$
-    59$:
-        // ＨＰの監視
-    90$:
-        ld      a, ENEMY_HP(ix)
-        cp      ENEMY_PARAM_0(ix)
-        jr      z, 91$
-        ld      ENEMY_PARAM_0(ix), a
-        // ＳＥの再生
-        ld      hl, #_enemyBigCoreSeHit
-        ld      (_soundRequest + 0x0006), hl
-    91$:
-    pop ix
-    ret
-    __endasm;
+void EnemyBigCoreUpdateCore(char* ix) {
+    if (ix[ENEMY_STATE]==0){
+        ix[ENEMY_STATE]++;// 初期化の完了
+    }
+    char a = ix[ENEMY_STATE];
+    if     (--a == 0) up1(ix);// 登場
+    else if(--a == 0) up2(ix);// ビームを撃つ
+    else if(--a == 0) up3(ix);// 待機
+    else if(--a == 0) up4(ix);// 移動↑
+    else              up5(ix);// 移動↓
+
+    if (ix[ENEMY_HP] != ix[ENEMY_PARAM_0]) {// ＨＰの監視
+        ix[ENEMY_PARAM_0] = ix[ENEMY_HP];
+        soundRequest[3] = (void*)enemyBigCoreSeHit;// ＳＥの再生
+    }
 }
 // 敵を更新する／ボディ
-void EnemyBigCoreUpdateBody(char* ix) __naked {
-    ix;
-    __asm;
-    push ix
-    push hl
-    pop ix
-    // 初期化の開始
-    ld      a, ENEMY_STATE(ix)
-    or      a
-    jr      nz, 09$
-        // アニメーションの設定
-        ld      a, #0x0c
-        ld      ENEMY_ANIMATION(ix), a
-        // 初期化の完了
-        inc     ENEMY_STATE(ix)
-    09$:
-        // ＨＰの再設定
-        ld      a, #0xff
-        ld      ENEMY_HP(ix), a
-        // コアの取得
-        ld      l, ENEMY_PARAM_0(ix)
-        ld      h, ENEMY_PARAM_1(ix)
-        push    hl
-        pop     iy
-        // コアの監視
-        ld      a, ENEMY_TYPE(iy)
-        cp      #ENEMY_TYPE_BIGCORE_CORE
-        jr      nz, 19$
-        ld      a, ENEMY_POSITION_X(iy)
-        ld      ENEMY_POSITION_X(ix), a
-        ld      a, ENEMY_POSITION_Y(iy)
-        ld      ENEMY_POSITION_Y(ix), a
-        jr      99$
-    19$:
-        // アニメーションの監視
-        ld      a, ENEMY_ANIMATION(ix)
-        cp      #0x0c
-        jr      nz, 20$
-        // ＳＥの再生
-        ld      hl, #_enemyBigCoreSeBomb
-        ld      (_soundRequest + 0x0006), hl
-    20$:
-        // アニメーションの更新
-        dec     ENEMY_ANIMATION(ix)
-    jr      nz, 99$
-        // 敵の削除
-        xor     a
-        ld      ENEMY_TYPE(ix), a
-        // 更新の完了
-    99$:
-    pop ix
-    ret
-    __endasm;
+void EnemyBigCoreUpdateBody(char* ix) {
+    if (ix[ENEMY_STATE]==0) {// 初期化の開始
+        ix[ENEMY_ANIMATION] = 0x0c;// アニメーションの設定
+        ix[ENEMY_STATE]++;// 初期化の完了
+    }
+    ix[ENEMY_HP] = 0xff; // ＨＰの再設定
+    //char* iy = (char*)((ix[ENEMY_PARAM_1]<<8)|ix[ENEMY_PARAM_0]);// コアの取得
+    char* iy = *(char**)&ix[ENEMY_PARAM_0];// コアの取得
+    if (iy[ENEMY_TYPE]==ENEMY_TYPE_BIGCORE_CORE) {// コアの監視
+        ix[ENEMY_POSITION_X] = iy[ENEMY_POSITION_X];
+        ix[ENEMY_POSITION_Y] = iy[ENEMY_POSITION_Y];
+    } else {
+        if (ix[ENEMY_ANIMATION] == 0x0c)// アニメーションの監視
+            soundRequest[3] = (void*)enemyBigCoreSeBomb;// ＳＥの再生
+        if (--ix[ENEMY_ANIMATION] == 0)// アニメーションの更新
+            ix[ENEMY_TYPE] = 0;// 敵の削除
+    }
 }
 short get_core_pos(char*ix){
     return (((short)(ix[ENEMY_POSITION_Y]&0xf8))<<2) +

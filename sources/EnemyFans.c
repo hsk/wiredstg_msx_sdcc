@@ -10,7 +10,7 @@
 // 敵を生成する
 void EnemyFansGenerate(void) {
     char *iy = enemyGenerator;
-    #if 1
+    #if 0
     iy[ENEMY_GENERATOR_TYPE] = 0;
     iy[ENEMY_GENERATOR_STATE] = 0;
     return;
@@ -42,228 +42,121 @@ void EnemyFansGenerate(void) {
     iy[ENEMY_GENERATOR_TYPE] = 0;
     iy[ENEMY_GENERATOR_STATE] = 0;
 }
-static void EnemyFansFrontMove(void);
-static void EnemyFansBackMove(void);
-// 敵を更新する
-void EnemyFansUpdate(char* ix) __naked {
-    ix;
-    __asm;
-    push ix
-    push hl
-    pop ix
+static void EnemyFansFrontMove(char *);
+static void EnemyFansBackMove(char *);
+
+static void up0(char* ix) {
     // 初期化の開始
-    ld      a, ENEMY_STATE(ix)
-    or      a
-    jr      nz, 09$
+    if (ix[ENEMY_STATE]==0){
         // ショットの設定
-        call    _SystemGetRandom
-        and     #0x1f
-        add     #0x08
-        ld      ENEMY_SHOT(ix), a
-        // アニメーションの設定
-        ld      a, #0x60
-        ld      ENEMY_ANIMATION(ix), a
-        // タイマの設定
-        ld      a, #0x04
-        ld      ENEMY_TIMER(ix), a
-        // 初期化の完了
-        inc     ENEMY_STATE(ix)
-    09$:
-    // 移動
-    ld      a, ENEMY_TYPE(ix)
-    cp      #ENEMY_TYPE_FANS_FRONT
-    jr      nz, 10$
-        call    _EnemyFansFrontMove
-        jr      19$
-    10$:
-        call    _EnemyFansBackMove
-    19$:
+        ix[ENEMY_SHOT] = (SystemGetRandom()&0x1f)+0x08;
+        ix[ENEMY_ANIMATION] = 0x60;// アニメーションの設定
+        ix[ENEMY_TIMER] = 4;// タイマの設定
+        ix[ENEMY_STATE]++;// 初期化の完了
+    }
+}
+static void up1(char* ix) {
     // ショットの更新
-    dec     ENEMY_SHOT(ix)
-    jr      nz, 91$
-        ld      h, ENEMY_POSITION_X(ix)
-        ld      l, ENEMY_POSITION_Y(ix)
-        call    _BulletGenerate
-        call    _SystemGetRandom
-        and     #0x1f
-        add     #0x30
-        ld      ENEMY_SHOT(ix), a
-        // アニメーションの更新
-    91$:
-    dec     ENEMY_TIMER(ix)
-    jr      nz, 99$
-        ld      a, ENEMY_ANIMATION(ix)
-        add     a, #0x02
-        cp      #0x66
-        jr      c, 92$
-            ld      a, #0x60
-        92$:
-        ld      ENEMY_ANIMATION(ix), a
-        ld      a, #0x04
-        ld      ENEMY_TIMER(ix), a
-        jr      99$
-        // 更新の完了
-    99$:
-    pop ix
-    ret
-    __endasm;
+    if (--ix[ENEMY_SHOT] == 0) {
+        BulletGenerate((ix[ENEMY_POSITION_X]<<8)|ix[ENEMY_POSITION_Y]);
+        ix[ENEMY_SHOT] = (SystemGetRandom()&0x1f)+0x30;
+    }
+}
+static void up2(char* ix) {
+    if (--ix[ENEMY_TIMER] == 0) {
+        char a = ix[ENEMY_ANIMATION] + 2;
+        if (a >= 0x66) a = 0x60;
+        ix[ENEMY_ANIMATION] = a;
+        ix[ENEMY_TIMER] = 4;
+    }
+}
+// 敵を更新する
+void EnemyFansUpdate(char* ix) {
+    up0(ix);
+    // 移動
+    if (ix[ENEMY_TYPE] == ENEMY_TYPE_FANS_FRONT) EnemyFansFrontMove(ix);
+    else                                         EnemyFansBackMove(ix);
+    up1(ix);
+    up2(ix);
+}
+static void f1(char* ix) {
+    if (ix[ENEMY_POSITION_X]>=256-4) {
+        ix[ENEMY_TYPE]=0;
+    } else {
+        ix[ENEMY_POSITION_X] += 4;
+        if (ix[ENEMY_POSITION_X]<0xd0) return;
+        ix[ENEMY_STATE] = (ship[SHIP_POSITION_Y]<=ix[ENEMY_POSITION_Y]) ? 3 : 2;
+    }
+}
+static void f2(char* ix) {
+    if (ix[ENEMY_POSITION_X]<=4) ix[ENEMY_TYPE]=0;
+    else {
+        ix[ENEMY_POSITION_X] -= 4;
+        ix[ENEMY_POSITION_Y] += 4;
+        if (ix[ENEMY_POSITION_Y]>=0xc0) ix[ENEMY_TYPE]=0;
+        else if (ship[SHIP_POSITION_Y] < ix[ENEMY_POSITION_Y]) ix[ENEMY_STATE] = 4;
+    }
+}
+static void f3(char* ix) {
+    if (ix[ENEMY_POSITION_X] < 4) ix[ENEMY_TYPE]=0;
+    else {
+        ix[ENEMY_POSITION_X] -= 4;
+        if (ix[ENEMY_POSITION_Y] < 4) ix[ENEMY_TYPE]=0;
+        else {
+            ix[ENEMY_POSITION_Y] -= 4;
+            if (ship[SHIP_POSITION_Y] > ix[ENEMY_POSITION_Y])
+                ix[ENEMY_STATE] = 4;
+        }
+    }
+}
+static void f4(char* ix) {
+    if (ix[ENEMY_POSITION_X] < 4) ix[ENEMY_TYPE]=0;
+    else ix[ENEMY_POSITION_X] -= 4;
 }
 // 敵が移動する／→
-static void EnemyFansFrontMove(void) __naked {
-    __asm;
-    // 移動（→）
-    ld      a, ENEMY_STATE(ix)
-    dec     a
-    jr      nz, 19$
-        ld      a, ENEMY_POSITION_X(ix)
-        add     a, #0x04
-        jp      c, 98$
-            ld      ENEMY_POSITION_X(ix), a
-            cp      #0xd0
-            jr      c, 99$
-                ld      a, (_ship + SHIP_POSITION_Y)
-                cp      ENEMY_POSITION_Y(ix)
-                ld      a, #0x02
-                adc     a, #0x00
-                ld      ENEMY_STATE(ix), a
-                jr      99$
-    19$:
-    // 移動（↓）
-    //ld      a, ENEMY_STATE(ix)
-    dec     a
-    jr      nz, 29$
-        ld      a, ENEMY_POSITION_X(ix)
-        sub     #0x04
-        jr      c, 98$
-            ld      ENEMY_POSITION_X(ix), a
-            ld      a, ENEMY_POSITION_Y(ix)
-            add     a, #0x04
-            cp      #0xc0
-            jr      nc, 98$
-                ld      ENEMY_POSITION_Y(ix), a
-                ld      b, a
-                ld      a, (_ship + SHIP_POSITION_Y)
-                cp      b
-                jr      nc, 99$
-                    ld      a, #0x04
-                    ld      ENEMY_STATE(ix), a
-                    jr      99$
-    29$:
-        // 移動（↑）
-        //ld      a, ENEMY_STATE(ix)
-        dec     a
-        jr      nz, 39$
-            ld      a, ENEMY_POSITION_X(ix)
-            sub     #0x04
-            jr      c, 98$
-                ld      ENEMY_POSITION_X(ix), a
-                ld      a, ENEMY_POSITION_Y(ix)
-                sub     #0x04
-                jr      c, 98$
-                    ld      ENEMY_POSITION_Y(ix), a
-                    ld      b, a
-                    ld      a, (_ship + SHIP_POSITION_Y)
-                    cp      b
-                    jr      c, 99$
-                        ld      a, #0x04
-                        ld      ENEMY_STATE(ix), a
-                        jr      99$
-    39$:
-        // 移動（←）
-        //ld      a, ENEMY_STATE(ix)
-        //dec     a
-        //jr      nz, 49$
-        ld      a, ENEMY_POSITION_X(ix)
-        sub     #0x04
-        jr      c, 98$
-            ld      ENEMY_POSITION_X(ix), a
-            jr      99$
-    49$:
-    // 敵の削除
-    98$:
-        xor     a
-        ld      ENEMY_TYPE(ix), a
-        // 移動の完了
-    99$:
-    ret
-    __endasm;
+static void EnemyFansFrontMove(char* ix) {
+    char a = ix[ENEMY_STATE];
+    if (a == 1)      f1(ix); // 移動（←）
+    else if (a == 2) f2(ix); // 移動（↓）
+    else if (a == 3) f3(ix); // 移動（↑）
+    else             f4(ix); // 移動（→）
+}
+static void b1(char* ix) {
+    ix[ENEMY_POSITION_X]-=4;
+    if (ix[ENEMY_POSITION_X] >= 0x30) return;
+    ix[ENEMY_STATE] = ship[SHIP_POSITION_Y]>ix[ENEMY_POSITION_Y]?2:3;
+}
+static void b2(char* ix) {
+    if (ix[ENEMY_POSITION_X]>=256-4) ix[ENEMY_TYPE]=0;
+    else {
+        ix[ENEMY_POSITION_X] += 4;
+        ix[ENEMY_POSITION_Y] += 4;
+        if (ix[ENEMY_POSITION_Y]>=0xc0) ix[ENEMY_TYPE]=0;
+        else if (ship[SHIP_POSITION_Y] < ix[ENEMY_POSITION_Y])
+            ix[ENEMY_STATE] = 4;
+    }
+}
+static void b3(char* ix) {
+    if (ix[ENEMY_POSITION_X] >= 256-4) ix[ENEMY_TYPE]=0;
+    else {
+        ix[ENEMY_POSITION_X] += 4;
+        if (ix[ENEMY_POSITION_Y] < 4) ix[ENEMY_TYPE]=0;
+        else {
+            ix[ENEMY_POSITION_Y] -= 4;
+            if (ship[SHIP_POSITION_Y] > ix[ENEMY_POSITION_Y])
+                ix[ENEMY_STATE] = 4;
+        }
+    }
+}
+static void b4(char* ix) {
+    if (ix[ENEMY_POSITION_X] >= 256-4) ix[ENEMY_TYPE]=0;
+    else ix[ENEMY_POSITION_X] += 4;
 }
 // 敵が移動する／←
-static void EnemyFansBackMove(void) __naked {
-    __asm;
-    // 移動（←）
-    ld      a, ENEMY_STATE(ix)
-    dec     a
-    jr      nz, 19$
-        ld      a, ENEMY_POSITION_X(ix)
-        sub     #0x04
-        ld      ENEMY_POSITION_X(ix), a
-        cp      #0x30
-        jp      nc, 99$
-            ld      a, (_ship + SHIP_POSITION_Y)
-            cp      ENEMY_POSITION_Y(ix)
-            ld      a, #0x02
-            adc     a, #0x00
-            ld      ENEMY_STATE(ix), a
-            jr      99$
-    19$:
-        // 移動（↓）
-        //ld      a, ENEMY_STATE(ix)
-        dec     a
-        jr      nz, 29$
-            ld      a, ENEMY_POSITION_X(ix)
-            add     a, #0x04
-            jr      c, 98$
-                ld      ENEMY_POSITION_X(ix), a
-                ld      a, ENEMY_POSITION_Y(ix)
-                add     a, #0x04
-                cp      #0xc0
-                jr      nc, 98$
-                    ld      ENEMY_POSITION_Y(ix), a
-                    ld      b, a
-                    ld      a, (_ship + SHIP_POSITION_Y)
-                    cp      b
-                    jr      nc, 99$
-                        ld      a, #0x04
-                        ld      ENEMY_STATE(ix), a
-                        jr      99$
-    29$:
-        // 移動（↑）
-        //ld      a, ENEMY_STATE(ix)
-        dec     a
-        jr      nz, 39$
-            ld      a, ENEMY_POSITION_X(ix)
-            add     a, #0x04
-            jr      c, 98$
-                ld      ENEMY_POSITION_X(ix), a
-                ld      a, ENEMY_POSITION_Y(ix)
-                sub     #0x04
-                jr      c, 98$
-                    ld      ENEMY_POSITION_Y(ix), a
-                    ld      b, a
-                    ld      a, (_ship + SHIP_POSITION_Y)
-                    cp      b
-                    jr      c, 99$
-                        ld      a, #0x04
-                        ld      ENEMY_STATE(ix), a
-                        jr      99$
-    39$:
-        // 移動（→）
-        //ld      a, ENEMY_STATE(ix)
-        //dec     a
-        //jr      nz, 49$
-        ld      a, ENEMY_POSITION_X(ix)
-        add     a, #0x04
-        jr      c, 98$
-            ld      ENEMY_POSITION_X(ix), a
-            jr      99$
-    49$:
-    // 敵の削除
-    98$:
-        xor     a
-        ld      ENEMY_TYPE(ix), a
-        // 移動の完了
-    99$:
-    ret
-    __endasm;
+static void EnemyFansBackMove(char* ix) {
+    char a = ix[ENEMY_STATE];
+    if (a == 1)      b1(ix); // 移動（←）
+    else if (a == 2) b2(ix); // 移動（↓）
+    else if (a == 3) b3(ix); // 移動（↑）
+    else             b4(ix); // 移動（→）
 }

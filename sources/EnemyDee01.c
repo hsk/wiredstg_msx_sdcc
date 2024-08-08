@@ -51,142 +51,85 @@ void EnemyDee01Generate(void) {
     iy[ENEMY_GENERATOR_TYPE] = 0;
     iy[ENEMY_GENERATOR_STATE] = 0;
 }
-// 敵を更新する
-void EnemyDee01Update(char* ix) __naked {
-    ix;
-    __asm;
-    push ix
-    push hl
-    pop ix
+static void up0(char* ix) {
     // 初期化の開始
-    ld      a, ENEMY_STATE(ix)
-    or      a
-    jr      nz, 09$
-        // パラメータの設定
-        xor     a
-        ld      ENEMY_PARAM_0(ix), a
-        // ショットの設定
-        call    _SystemGetRandom
-        and     #0x3f
-        add     #0x40
-        ld      ENEMY_SHOT(ix), a
-        // アニメーションの設定
-        //   xor     a
-        //   ld      ENEMY_ANIMATION(ix), a
-        // 初期化の完了
-        inc     ENEMY_STATE(ix)
-    09$:
+    if (ix[ENEMY_STATE]==0) {
+        ix[ENEMY_PARAM_0] = 0;// パラメータの設定
+        ix[ENEMY_SHOT] = (SystemGetRandom()&0x3f)+0x40;// ショットの設定
+        ix[ENEMY_STATE]++;// 初期化の完了
+    }
+}
+static void up1(char* ix) {
+    char a;
+    char h = (ship[SHIP_POSITION_X]>>1)-(ix[ENEMY_POSITION_X]>>1);
+    if (!(h&0x80)) {
+        char l = (ship[SHIP_POSITION_Y]>>1)-(ix[ENEMY_POSITION_Y]>>1);
+        if(!(l&0x80)) {
+            a = SystemGetAtan2((h<<8)|l);
+        } else {
+            a = 0;
+        }
+    } else {
+        a = 0x40;
+    }
+
+    char c = 0;
+    if (a >= 0x10) {
+        c++;
+        if (a >= 0x30) c++;
+    }
+    ix[ENEMY_ANIMATION] = (c<<5) + 0xac;
+}
+static char up2(char* ix) {
+    char a;
+    char h = (ship[SHIP_POSITION_X]>>1)-(ix[ENEMY_POSITION_X]>>1);
+    if (!(h&0x80)) {
+        char l = (ship[SHIP_POSITION_Y]>>1)-(ix[ENEMY_POSITION_Y]>>1);
+        if(l&0x80) {
+            a = SystemGetAtan2((h<<8)|l);
+        } else {
+            a = 0;
+        }
+    } else {
+        a = 0xc0;
+    }
+    if (a) a--;
+    char c = 0;
+    if (a) {
+        if (a < 0xf0) {
+            c++;
+            if (a <0xd0) c++;
+        }
+    }
+    ix[ENEMY_ANIMATION] = (c<<5) + 0xae;
+}
+static void up4(char* ix) {
+    if (ship[SHIP_POSITION_X] >= ix[ENEMY_POSITION_X]) {
+        if (--ix[ENEMY_SHOT]) return;
+        BulletGenerate((ix[ENEMY_POSITION_X]<<8)|ix[ENEMY_POSITION_Y]);
+        ix[ENEMY_SHOT]=(SystemGetRandom()&0x3f)+0x30;
+    }
+}
+
+// 敵を更新する
+void EnemyDee01Update(char* ix) {
+    up0(ix);
     // 移動（→）
-    ld      a, (_gameScroll)
-    or      a
-    jr      nz, 19$
-        ld      a, ENEMY_POSITION_X(ix)
-        add     a, #0x08
-        jp      c, 98$
-        ld      ENEMY_POSITION_X(ix), a
-    19$:
+    if (gameScroll==0) {
+        if (ix[ENEMY_POSITION_X]>=256-8) {
+            ix[ENEMY_TYPE] = 0;// 敵の削除
+            return;
+        }
+        ix[ENEMY_POSITION_X]+=8;
+    }
     // 向きの取得
-    ld      a, ENEMY_TYPE(ix)
-    cp      #ENEMY_TYPE_DEE01_UPPER
-    jr      nz, 22$
-        ld      h, ENEMY_POSITION_X(ix)
-        ld      l, ENEMY_POSITION_Y(ix)
-        ld      a, (_ship + SHIP_POSITION_X)
-        srl     a
-        srl     h
-        sub     h
-        ld      h, a
-        ld      a, #0x40
-        jr      c, 20$
-            ld      a, (_ship + SHIP_POSITION_Y)
-            srl     a
-            srl     l
-            sub     l
-            ld      l, a
-            ld      a, #0x00
-            jr      c, 20$
-                call    _SystemGetAtan2
-        20$:
-        ld      c, #0x00
-        cp      #0x10
-        jr      c, 21$
-            inc     c
-            cp      #0x30
-            jr      c, 21$
-                inc     c
-        21$:
-        ld      a, c
-        add     a, a
-        add     a, a
-        add     a, a
-        add     a, a
-        add     a, a
-        add     a, #0xac
-        ld      ENEMY_ANIMATION(ix), a
-        jr      29$
-    22$:
-        ld      h, ENEMY_POSITION_X(ix)
-        ld      l, ENEMY_POSITION_Y(ix)
-        ld      a, (_ship + SHIP_POSITION_X)
-        srl     a
-        srl     h
-        sub     h
-        ld      h, a
-        ld      a, #0xc0
-        jr      c, 23$
-            ld      a, (_ship + SHIP_POSITION_Y)
-            srl     a
-            srl     l
-            sub     l
-            ld      l, a
-            ld      a, #0x00
-            jr      nc, 23$
-                call    _SystemGetAtan2
-    23$:
-        or      a
-        jr      nz, 24$
-            dec     a
-        24$:
-        ld      c, #0x00
-        or      a
-        jr      z, 25$
-        cp      #0xf0
-        jr      nc, 25$
-        inc     c
-        cp      #0xd0
-        jr      nc, 25$
-            inc     c
-        25$:
-        ld      a, c
-        add     a, a
-        add     a, a
-        add     a, a
-        add     a, a
-        add     a, a
-        add     a, #0xae
-        ld      ENEMY_ANIMATION(ix), a
-        //jr      29$
-    29$:
+    if (ix[ENEMY_TYPE]==ENEMY_TYPE_DEE01_UPPER) {
+        ix[ENEMY_ANIMATION]=0xac;
+        up1(ix);
+    } else {
+        ix[ENEMY_ANIMATION]=0xae;
+        up2(ix);
+    }
     // ショットの更新
-    ld      a, (_ship + SHIP_POSITION_X)
-    cp      ENEMY_POSITION_X(ix)
-    jr      c, 99$
-        dec     ENEMY_SHOT(ix)
-        jr      nz, 99$
-            ld      h, ENEMY_POSITION_X(ix)
-            ld      l, ENEMY_POSITION_Y(ix)
-            call    _BulletGenerate
-            call    _SystemGetRandom
-            and     #0x3f
-            add     #0x30
-            ld      ENEMY_SHOT(ix), a
-            jr      99$
-    98$:
-        // 敵の削除
-        xor     a
-        ld      ENEMY_TYPE(ix), a
-    99$:
-    pop ix
-    ret
-    __endasm;
+    up4(ix);
 }

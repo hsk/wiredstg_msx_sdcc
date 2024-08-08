@@ -207,7 +207,7 @@ static void EnemyNullGenerate(void) {
             iy[ENEMY_GENERATOR_STATE]++;
         }
         // ボス登場の条件
-        if (*(short*)&ship[SHIP_SHOT_L] < 0x10) {
+        if (*(short*)&ship[SHIP_SHOT_L] < 0x30) {
         //if (*(short*)&ship[SHIP_SHOT_L] < 0x100) {
             // タイマの更新
             iy[ENEMY_GENERATOR_TIMER]--;

@@ -1543,7 +1543,8 @@ void SystemGetCos(void) __naked {
     __endasm;
 }
 // atan2 の値を取得する
-void SystemGetAtan2(void) __naked {
+char SystemGetAtan2(short a) __naked {
+    a;
     __asm;
     // レジスタの保存
     push    hl

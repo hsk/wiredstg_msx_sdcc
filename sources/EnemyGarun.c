@@ -27,7 +27,7 @@ static char const enemyGarunAnimation[] = {
 // 敵を生成する
 void EnemyGarunGenerate(void) {
     char* iy = enemyGenerator;
-    #if 1
+    #if 0
     iy[ENEMY_GENERATOR_TYPE] = 0;
     iy[ENEMY_GENERATOR_STATE] = 0;
     return;
@@ -51,98 +51,44 @@ void EnemyGarunGenerate(void) {
     iy[ENEMY_GENERATOR_TYPE] = 0;
     iy[ENEMY_GENERATOR_STATE] = 0;
 }
-// 敵を更新する
-void EnemyGarunUpdate(char* ix) __naked {
-    ix;
-    __asm;
-    push ix
-    push hl
-    pop ix
+static void up0(char* ix) {
     // 初期化の開始
-    ld      a, ENEMY_STATE(ix)
-    or      a
-    jr      nz, 09$
-        // パラメータの設定
-        xor     a
-        ld      ENEMY_PARAM_0(ix), a
-        // ショットの設定
-        call    _SystemGetRandom
-        and     #0x1f
-        add     #0x10
-        ld      ENEMY_SHOT(ix), a
-        // アニメーションの設定
-        //xor     a
-        //ld      ENEMY_ANIMATION(ix), a
-        // タイマの設定
-        xor     a
-        ld      ENEMY_TIMER(ix), a
-        // 初期化の完了
-        inc     ENEMY_STATE(ix)
-    09$:
-    // for(;;) {
-        // 移動（←→）
-        ld      a, ENEMY_TYPE(ix)
-        cp      #ENEMY_TYPE_GARUN_FRONT
-        ld      a, ENEMY_POSITION_X(ix)
-        jr      nz, 10$
-            add     a, #0x02
-            jr      c, 98$// break;
-            jr      11$
-        10$:
-            sub     #0x02
-            jr      c, 98$// break;
-        11$:
-        ld      ENEMY_POSITION_X(ix), a
-        // 移動（↑↓）
-        inc     ENEMY_PARAM_0(ix)
-        ld      a, ENEMY_PARAM_0(ix)
-        and     #0x1f
-        ld      e, a
-        ld      d, #0x00
-        ld      hl, #_enemyGarunCurve
-        add     hl, de
-        ld      a, (hl)
-        add     a, ENEMY_POSITION_Y(ix)
-        cp      #0xc0
-        jr      nc, 98$ // break
-        ld      ENEMY_POSITION_Y(ix), a
+    if (ix[ENEMY_STATE]==0){
+        ix[ENEMY_PARAM_0] = 0;// パラメータの設定
+        ix[ENEMY_SHOT] = (SystemGetRandom()&0x1f)+0x10;// ショットの設定
+        ix[ENEMY_TIMER] = 0;// タイマの設定
+        ix[ENEMY_STATE]++;// 初期化の完了
+    }
+}
+// 敵を更新する
+void EnemyGarunUpdate(char* ix) {
+    up0(ix);
+    for(;;) {
+        {// 移動（←→）
+            if (ix[ENEMY_TYPE] == ENEMY_TYPE_GARUN_FRONT) {
+                if (ix[ENEMY_POSITION_X]+2>255) break;
+                ix[ENEMY_POSITION_X]+=0x02;
+            } else {
+                if (ix[ENEMY_POSITION_X]-2 < 0) break;
+                ix[ENEMY_POSITION_X]-=0x02;
+            }
+        }
+        {// 移動（↑↓）
+        ix[ENEMY_PARAM_0]++;
+        char a = enemyGarunCurve[ix[ENEMY_PARAM_0]&0x1f]+ix[ENEMY_POSITION_Y];
+        if (a>=0xc0) break;
+        ix[ENEMY_POSITION_Y] = a;}
         // ショットの更新
-        dec     ENEMY_SHOT(ix)
-        jr      nz, 91$
-            ld      h, ENEMY_POSITION_X(ix)
-            ld      l, ENEMY_POSITION_Y(ix)
-            call    _BulletGenerate
-            call    _SystemGetRandom
-            and     #0x1f
-            add     #0x18
-            ld      ENEMY_SHOT(ix), a
-            // アニメーションの更新
-        91$:
-        inc     ENEMY_TIMER(ix)
-        ld      a, ENEMY_TYPE(ix)
-        sub     #ENEMY_TYPE_GARUN_FRONT
-        add     a, a
-        add     a, a
-        ld      e, a
-        ld      a, ENEMY_TIMER(ix)
-        and     #0x0c
-        srl     a
-        srl     a
-        add     a, e
-        ld      e, a
-        ld      d, #0x00
-        ld      hl, #_enemyGarunAnimation
-        add     hl, de
-        ld      a, (hl)
-        ld      ENEMY_ANIMATION(ix), a
-        jr 99$
-        // 敵の削除
-    98$:
-    xor     a
-    ld      ENEMY_TYPE(ix), a
-    // 更新の完了
-    99$:
-    pop ix
-    ret
-    __endasm;
+        if (--ix[ENEMY_SHOT] == 0) {
+            BulletGenerate((ix[ENEMY_POSITION_X]<<8)|ix[ENEMY_POSITION_Y]);
+            ix[ENEMY_SHOT]=(SystemGetRandom()&0x1f)+0x18;
+        }
+        // アニメーションの更新
+        ix[ENEMY_TIMER]++;
+        ix[ENEMY_ANIMATION]=enemyGarunAnimation[
+            ((ix[ENEMY_TYPE]-ENEMY_TYPE_GARUN_FRONT)<<2)+
+            ((ix[ENEMY_TIMER] & 0x0c)>>2)];
+        return;
+    }
+    ix[ENEMY_TYPE] = 0;// 敵の削除
 }

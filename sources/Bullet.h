@@ -18,7 +18,7 @@
 #define BULLET_STATE_NULL  0x00
 // 外部関数宣言
 void BulletInitialize(void);
-void BulletGenerate(void);
+void BulletGenerate(short hl);
 void BulletUpdate(void);
 void BulletRender(void);
 // 外部変数宣言

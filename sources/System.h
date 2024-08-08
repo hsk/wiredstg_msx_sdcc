@@ -92,7 +92,7 @@ char SystemGetRandom(void);
 // 三角関数
 void SystemGetSin(void);
 void SystemGetCos(void);
-void SystemGetAtan2(void);
+char SystemGetAtan2(short a);
 // デバッグ
 void SystemPutRegisterA(void);
 // 外部変数宣言

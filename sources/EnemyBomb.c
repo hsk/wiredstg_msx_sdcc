@@ -13,51 +13,24 @@ static char const enemyBombSe[] = "T1V15L0O4GFEDCO3BAG";
 void EnemyBombGenerate(void) {
 }
 // 敵を更新する
-void EnemyBombUpdate(char* ix) __naked {
-    ix;
-    __asm;
-    push ix
-    push hl
-    pop ix
+void EnemyBombUpdate(char* ix) {
     // 初期化の開始
-    ld      a, ENEMY_STATE(ix)
-    or      a
-    jr      nz, 09$
-        // アニメーションの設定
-        ld      a, #0x40
-        ld      ENEMY_ANIMATION(ix), a
-        // タイマの設定
-        ld      a, #0x02
-        ld      ENEMY_TIMER(ix), a
-        // 撃ち返し
-        ld      h, ENEMY_POSITION_X(ix)
-        ld      l, ENEMY_POSITION_Y(ix)
-        call    _BulletGenerate
-        // ＳＥの再生
-        ld      hl, #_enemyBombSe
-        ld      (_soundRequest + 0x0006), hl
-        // 初期化の完了
-        inc     ENEMY_STATE(ix)
-    09$:
+    if(ix[ENEMY_STATE]==0){
+        ix[ENEMY_ANIMATION] = 0x40;// アニメーションの設定
+        ix[ENEMY_TIMER] = 2;// タイマの設定
+        BulletGenerate((ix[ENEMY_POSITION_X]<<8)|ix[ENEMY_POSITION_Y]);// 撃ち返し
+        soundRequest[6] = enemyBombSe;// ＳＥの再生
+        ix[ENEMY_STATE]++;// 初期化の完了
+    }
     // アニメーションの更新
-    dec     ENEMY_TIMER(ix)
-    jr      nz, 99$
-    ld      a, ENEMY_ANIMATION(ix)
-    add     a, #0x02
-    cp      #0x46
-    jr      nc, 98$
-        ld      ENEMY_ANIMATION(ix), a
-        ld      a, #0x02
-        ld      ENEMY_TIMER(ix), a
-        jr      99$
-    98$:
-        // 敵の削除
-        xor     a
-        ld      ENEMY_TYPE(ix), a
-    99$:
-    pop ix
-    ret
-    __endasm;
+    if(--ix[ENEMY_TIMER]) return;
+    char a = ix[ENEMY_ANIMATION]+2;
+    if (a < 0x46) {
+        ix[ENEMY_ANIMATION] = a;
+        ix[ENEMY_TIMER] = 2;
+        return;
+    }
+    ix[ENEMY_TYPE] = 0;// 敵の削除
 }
 // 敵を描画する
 void EnemyBombRender(char* ix) {
