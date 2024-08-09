@@ -260,7 +260,7 @@ static void GameHitCheck(void) {
         } else if(ground[de]==0)continue;
         ix[SHOT_STATE] = 0;
     }
-    #if 0
+    #if 1
     // 弾のチェック
     for(char b=bulletN,*ix=bullet;b;b--,ix+=BULLET_SIZE) {
         if (ix[BULLET_STATE]==0)continue;
