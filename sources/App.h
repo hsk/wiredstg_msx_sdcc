@@ -14,7 +14,6 @@
 // 外部関数宣言
 void AppInitialize(void);
 void AppUpdate(void);
-void AppTransferPatternName(void);
 // 外部変数宣言
 extern char appState;// 状態
 extern char appColor;

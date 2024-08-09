@@ -112,16 +112,3 @@ void AppUpdate(void) {
     if (a == APP_STATE_GAME_INITIALIZE) GameInitialize();  // ゲームの初期化
     else /*if (a == APP_STATE_GAME_UPDATE)*/ GameUpdate(); // ゲームの更新
 }
-// パターンネームを転送する
-void AppTransferPatternName(void) {
-    *(u16*)&videoTransfer[VIDEO_TRANSFER_VRAM_0_SRC] = (u16)(appPatternName + 0x0000);
-    *(u16*)&videoTransfer[VIDEO_TRANSFER_VRAM_0_DST] = APP_PATTERN_NAME_TABLE + 0x0000;
-    videoTransfer[VIDEO_TRANSFER_VRAM_0_BYTES] = 0;
-    *(u16*)&videoTransfer[VIDEO_TRANSFER_VRAM_1_SRC] = (u16)(appPatternName + 0x0100);
-    *(u16*)&videoTransfer[VIDEO_TRANSFER_VRAM_1_DST] = APP_PATTERN_NAME_TABLE + 0x0100;
-    videoTransfer[VIDEO_TRANSFER_VRAM_1_BYTES] = 0;
-    *(u16*)&videoTransfer[VIDEO_TRANSFER_VRAM_2_SRC] = (u16)(appPatternName + 0x0200);
-    *(u16*)&videoTransfer[VIDEO_TRANSFER_VRAM_2_DST] = APP_PATTERN_NAME_TABLE + 0x0200;
-    videoTransfer[VIDEO_TRANSFER_VRAM_2_BYTES] = 0;
-    request |= 1<<REQUEST_VRAM;
-}

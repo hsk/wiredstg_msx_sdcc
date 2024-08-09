@@ -5,7 +5,6 @@
 #include "App.h"
 #include "Game.h"
 #include "Ship.h"
-#include "Enemy.h"
 #include "string.h"
 // 状態
 #define GAME_STATE_NULL 0x00
@@ -25,12 +24,9 @@ char gameScroll;// スクロール
 void GameInitialize(void) {
     // ゲームの初期化
     ShipInitialize(); // 自機の初期化
-    EnemyInitialize(); // 敵の初期化
     gamePause = 0;// 一時停止の初期化
     gameScroll = 0;// スクロールの初期化
     memset(appPatternName,0,0x300);// パターンのクリア
-    // パターンネームの転送
-    AppTransferPatternName();
     // videoRegister[VDP_R1] |= 1<<VDP_R1_BL;// 描画の開始
     // request |= 1<<REQUEST_VIDEO_REGISTER;// ビデオレジスタの転送
     // 状態の設定
@@ -61,10 +57,7 @@ static void GamePlay(void) {
     SystemClearSprite();// スプライトのクリア
     gameScroll = (gameScroll+1)&0x0f;// スクロールの更新
     ShipUpdate(); // 自機の更新
-    EnemyUpdate(); // 敵の更新
     ShipRender(); // 自機の描画
-    EnemyRender(); // 敵の描画
-    AppTransferPatternName(); // パターンネームの転送
     if (ship[SHIP_TYPE])return;// ゲームオーバーの条件
     gameState = GAME_STATE_OVER; // ゲームオーバー
 }
@@ -73,7 +66,6 @@ static void GameOver(void) {
     if (!(gameState&0xf)) {// 初期化の開始
         // ゲームオーバーの表示
         memcpy(&appPatternName[0x016b],gameOverString,0xa);
-        AppTransferPatternName();// パターンネームの転送
         gameState++;// 初期化の完了
         gameScorePlus=60;
     }
