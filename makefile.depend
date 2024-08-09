@@ -9,8 +9,6 @@ Game.rel            :   Game.c Game.h \
                         bios.h vdp.h System.h App.h Ground.h Ship.h Shot.h Enemy.h Bullet.h
 Ground.rel          :   Ground.c Ground.h \
                         bios.h vdp.h System.h App.h Game.h
-Star.rel            :   Star.c Star.h \
-                        bios.h vdp.h System.h App.h Game.h
 Ship.rel            :   Ship.c Ship.h \
                         bios.h vdp.h System.h App.h Game.h Shot.h
 Shot.rel            :   Shot.c Shot.h \

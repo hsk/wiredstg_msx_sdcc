@@ -5,7 +5,6 @@
 #include "App.h"
 #include "Game.h"
 #include "Ground.h"
-#include "Star.h"
 #include "Ship.h"
 #include "Shot.h"
 #include "Enemy.h"
@@ -29,7 +28,6 @@ char gameScroll;// スクロール
 void GameInitialize(void) {
     // ゲームの初期化
     GroundInitialize(); // 地面の初期化
-    StarInitialize(); // 星の初期化
     ShipInitialize(); // 自機の初期化
     ShotInitialize(); // ショットの初期化
     EnemyInitialize(); // 敵の初期化
@@ -71,13 +69,11 @@ static void GamePlay(void) {
     gameScroll = (gameScroll+1)&0x0f;// スクロールの更新
     GameHitCheck(); // ヒットチェック
     GroundUpdate(); // 地面の更新
-    StarUpdate(); // 星の更新
     ShipUpdate(); // 自機の更新
     ShotUpdate(); // ショットの更新
     EnemyUpdate(); // 敵の更新
     BulletUpdate(); // 弾の更新
     GroundRender(); // 地面の描画
-    StarRender(); // 星の描画
     ShipRender(); // 自機の描画
     ShotRender(); // ショットの描画
     EnemyRender(); // 敵の描画
