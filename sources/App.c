@@ -126,27 +126,4 @@ void AppTransferPatternName(void) {
     *(u16*)&videoTransfer[VIDEO_TRANSFER_VRAM_2_DST] = APP_PATTERN_NAME_TABLE + 0x0200;
     videoTransfer[VIDEO_TRANSFER_VRAM_2_BYTES] = 0;
     request |= 1<<REQUEST_VRAM;
-    #if 0
-    __asm;
-    // パターンネームの転送
-    xor     a
-    ld      hl, #(_appPatternName + 0x0000)
-    ld      (_videoTransfer + VIDEO_TRANSFER_VRAM_0_SRC), hl
-    ld      hl, #(APP_PATTERN_NAME_TABLE + 0x0000)
-    ld      (_videoTransfer + VIDEO_TRANSFER_VRAM_0_DST), hl
-    ld      (_videoTransfer + VIDEO_TRANSFER_VRAM_0_BYTES), a
-    ld      hl, #(_appPatternName + 0x0100)
-    ld      (_videoTransfer + VIDEO_TRANSFER_VRAM_1_SRC), hl
-    ld      hl, #(APP_PATTERN_NAME_TABLE + 0x0100)
-    ld      (_videoTransfer + VIDEO_TRANSFER_VRAM_1_DST), hl
-    ld      (_videoTransfer + VIDEO_TRANSFER_VRAM_1_BYTES), a
-    ld      hl, #(_appPatternName + 0x0200)
-    ld      (_videoTransfer + VIDEO_TRANSFER_VRAM_2_SRC), hl
-    ld      hl, #(APP_PATTERN_NAME_TABLE + 0x0200)
-    ld      (_videoTransfer + VIDEO_TRANSFER_VRAM_2_DST), hl
-    ld      (_videoTransfer + VIDEO_TRANSFER_VRAM_2_BYTES), a
-    ld      hl, #(_request)
-    set     #REQUEST_VRAM, (hl)
-    __endasm;
-    #endif
 }

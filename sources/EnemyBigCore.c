@@ -163,8 +163,7 @@ void EnemyBigCoreBodyRender(char* ix) {
     // パターンを置く
     signed char b1 = 0x1b - (ix[ENEMY_POSITION_Y]>>3);
     if (b1<0) return;
-    b1++;
-    if (b1 > 9) b1 = 9;
+    if (++b1 > 9) b1 = 9;
     // 位置の取得
     short bc = get_body_pos(ix);
     {

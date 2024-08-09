@@ -232,7 +232,6 @@ static void GameOver(void) {
     if (!(gameState&0xf)) {// 初期化の開始
         // ゲームオーバーの表示
         memcpy(&appPatternName[0x016b],gameOverString,0xa);
-        //for(char*hl=(void*)gameOverString,*de=&appPatternName[0x016b],i=0xa;i;i--)*de++ = *hl++;
         AppTransferPatternName();// パターンネームの転送
         soundRequest[0]=(void*)gameOverBgm0;// ＢＧＭの再生
         soundRequest[1]=(void*)gameOverBgm1;
@@ -311,7 +310,6 @@ static void GameUpdateScore(void) {
     }
     // 初期文字列の転送
     memcpy(appPatternName,gameScoreString,0x20);
-    //for(char *hl = (void*)gameScoreString,*de = appPatternName,bc=0x20;bc;bc--)*de++=*hl++;
     // スコアの描画
     for(char *hl = gameScore,*de = appPatternName + 3,b = 6;b;hl++,de++,b--) {
         if (*hl) {
@@ -330,5 +328,4 @@ static void GameUpdateScore(void) {
     }
     // 速度の描画
     memcpy(&appPatternName[0x1d],&gameSpeedString[ship[SHIP_SPEED]*2],2);
-    //for(char *hl = (void*)&gameSpeedString[ship[SHIP_SPEED]*2],*de = &appPatternName[0x1d],bc=2;bc;bc--)*de++=*hl++;
 }
