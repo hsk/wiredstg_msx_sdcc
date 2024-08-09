@@ -115,7 +115,7 @@ depend:
 # build resource file
 #
 resource:
-	@bin2s -n patternTable -o sources\pattern.s resources\pattern.chr
+	cd resources; python pattern.py > ../sources/pattern.c
 
 # phony targets
 #
