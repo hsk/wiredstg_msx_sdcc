@@ -6,11 +6,9 @@ System.rel          :   System.c System.h \
 App.rel             :   App.c App.h \
                         bios.h vdp.h System.h Game.h
 Game.rel            :   Game.c Game.h \
-                        bios.h vdp.h System.h App.h Ship.h Shot.h Enemy.h
+                        bios.h vdp.h System.h App.h Ship.h Enemy.h
 Ship.rel            :   Ship.c Ship.h \
-                        bios.h vdp.h System.h App.h Game.h Shot.h
-Shot.rel            :   Shot.c Shot.h \
-                        bios.h vdp.h System.h App.h Game.h Ship.h
+                        bios.h vdp.h System.h App.h Game.h
 Enemy.rel           :   Enemy.c Enemy.h \
                         bios.h vdp.h System.h App.h Game.h Ship.h
 EnemyBomb.rel       :   EnemyBomb.c \
