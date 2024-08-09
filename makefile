@@ -79,7 +79,7 @@ CSRCS			=	\
 				main.c System.c \
 				App.c \
 				Game.c Ship.c \
-				Enemy.c EnemyBomb.c EnemyRugal.c \
+				Enemy.c EnemyRugal.c \
 				pattern.c
 
 # object files

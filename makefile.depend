@@ -11,8 +11,6 @@ Ship.rel            :   Ship.c Ship.h \
                         bios.h vdp.h System.h App.h Game.h
 Enemy.rel           :   Enemy.c Enemy.h \
                         bios.h vdp.h System.h App.h Game.h Ship.h
-EnemyBomb.rel       :   EnemyBomb.c \
-                        bios.h vdp.h System.h App.h Game.h Enemy.h
 EnemyRugal.rel      :   EnemyRugal.c \
                         bios.h vdp.h System.h App.h Game.h Ship.h Enemy.h
 

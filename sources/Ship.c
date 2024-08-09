@@ -85,6 +85,8 @@ static void ShipPlay(void) {
         ship[SHIP_POSITION_Y] += 2;
         if (ship[SHIP_POSITION_Y]>0xb7)ship[SHIP_POSITION_Y]=0xb7;
         ship[SHIP_ANIMATION] = 0x01;
+    } else {
+        ship[SHIP_ANIMATION] = 0x0;
     }
     // ←→の移動
     if (input[INPUT_KEY_LEFT]) {

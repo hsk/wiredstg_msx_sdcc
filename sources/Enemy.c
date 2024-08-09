@@ -68,7 +68,7 @@ static char const enemyGenerateType[] = {
 static void EnemyNullUpdate(char* ix);
 static FP1 const enemyUpdateProc[] = {
     EnemyNullUpdate,
-    EnemyBombUpdate,
+    EnemyNullUpdate,
     EnemyNullUpdate,
     EnemyNullUpdate,
     EnemyRugalUpdate,
@@ -88,7 +88,7 @@ static void EnemyNullRender(char*);
 static void EnemyPutPattern16x16(char*);
 static FP1 const enemyRenderProc[] = {
     EnemyNullRender,
-    EnemyBombRender,
+    EnemyNullRender,
     EnemyNullRender,
     EnemyNullRender,
     EnemyPutPattern16x16,
