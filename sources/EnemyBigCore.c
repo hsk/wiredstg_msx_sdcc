@@ -105,7 +105,6 @@ void EnemyBigCoreUpdateCore(char* ix) {
 
     if (ix[ENEMY_HP] != ix[ENEMY_PARAM_0]) {// ＨＰの監視
         ix[ENEMY_PARAM_0] = ix[ENEMY_HP];
-        soundRequest[3] = (void*)enemyBigCoreSeHit;// ＳＥの再生
     }
 }
 // 敵を更新する／ボディ
@@ -121,8 +120,6 @@ void EnemyBigCoreUpdateBody(char* ix) {
         ix[ENEMY_POSITION_X] = iy[ENEMY_POSITION_X];
         ix[ENEMY_POSITION_Y] = iy[ENEMY_POSITION_Y];
     } else {
-        if (ix[ENEMY_ANIMATION] == 0x0c)// アニメーションの監視
-            soundRequest[3] = (void*)enemyBigCoreSeBomb;// ＳＥの再生
         if (--ix[ENEMY_ANIMATION] == 0)// アニメーションの更新
             ix[ENEMY_TYPE] = 0;// 敵の削除
     }

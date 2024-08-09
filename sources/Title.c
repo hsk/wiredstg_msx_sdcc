@@ -71,13 +71,10 @@ void TitleUpdate(void) {
         if (input[INPUT_BUTTON_SPACE]==1) {// SPACE キーの押下
             titleState++;
             titleAnimation=0x60;// アニメーションの設定
-            soundRequest[0] = (void*)titleJingle0;// ジングルの再生
-            soundRequest[1] = (void*)titleJingle1;
-            soundRequest[2] = (void*)titleJingle2;
         }
     } else {
         titleTimer += 8;// タイマの更新
-        if(soundPlay[0]==0) {// ジングルの監視
+        if(titleTimer >= 255-8) {// ジングルの監視
             //videoRegister[VDP_R1] &= ~(1<<VDP_R1_BL); // 描画の停止
             //request |= 1<<REQUEST_VIDEO_REGISTER;// ビデオレジスタの転送
             appState = APP_STATE_GAME_INITIALIZE;// ゲームの開始

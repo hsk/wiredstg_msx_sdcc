@@ -113,7 +113,6 @@ static void ShipBomb(void) {
     if (ship[SHIP_STATE]==0) {
         ship[SHIP_ANIMATION] = 3;// アニメーションの設定
         ship[SHIP_TIMER] = 4;// タイマの設定
-        soundRequest[3] = (void*)shipSe;// ＳＥの再生
         ship[SHIP_STATE]++;// 初期化の完了
     }
     // アニメーションの更新

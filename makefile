@@ -76,7 +76,7 @@ ASSRCS			=	crt0.s
 
 # c source files
 CSRCS			=	\
-				main.c System.c Sound.c \
+				main.c System.c \
 				App.c \
 				Title.c \
 				Game.c Ground.c Star.c Ship.c Shot.c Bullet.c \

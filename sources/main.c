@@ -51,7 +51,6 @@ static void H_timiEntry(void) __naked {
         SystemTransferSprite();
         if (request & (1 << REQUEST_VRAM)) SystemTransferVram(); // VRAM の転送
         SystemUpdateInput();// キー入力の更新
-        SystemUpdateSound();// サウンドの更新
         if (input[INPUT_BUTTON_STOP]==1) flag |= (1 << FLAG_CANCEL);// STOP キーによるキャンセル
         // 処理の完了
         AppUpdate(); // アプリケーションの更新

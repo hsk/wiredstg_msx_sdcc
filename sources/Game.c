@@ -71,8 +71,6 @@ void GameUpdate(void) {
     // ESC キーで一時停止
     if (input[INPUT_BUTTON_ESC] == 1) {
         gamePause = 1 - gamePause;
-        if (gamePause) SystemSuspendSound();
-        else           SystemResumeSound();
     }
     if (gamePause) return;
     SystemGetRandom();// 乱数の更新
@@ -85,9 +83,6 @@ static void GamePlay(void) {
     if (!(gameState&0xf)) {// 初期化の開始
         videoRegister[VDP_R1] |= 1<<VDP_R1_BL;// 描画の開始
         request |= 1<<REQUEST_VIDEO_REGISTER;// ビデオレジスタの転送
-        soundRequest[0]=(void*)gamePlayBgm0;// ＢＧＭの再生
-        soundRequest[1]=(void*)gamePlayBgm1;
-        soundRequest[2]=(void*)gamePlayBgm2;
         gameState++;// 初期化の完了
     }
     SystemClearSprite();// スプライトのクリア
@@ -117,12 +112,10 @@ static void GameOver(void) {
         // ゲームオーバーの表示
         memcpy(&appPatternName[0x016b],gameOverString,0xa);
         AppTransferPatternName();// パターンネームの転送
-        soundRequest[0]=(void*)gameOverBgm0;// ＢＧＭの再生
-        soundRequest[1]=(void*)gameOverBgm1;
-        soundRequest[2]=(void*)gameOverBgm2;
         gameState++;// 初期化の完了
+        gameScorePlus=60;
     }
-    if (soundRequest[0]||soundPlay[0]) return; // ＢＧＭの監視
+    if(--gameScorePlus) return;
     appState = APP_STATE_TITLE_INITIALIZE; // タイトルへ戻る
 }
 // ヒットチェックを行う
