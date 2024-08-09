@@ -1,7 +1,9 @@
 crt0.rel            :   crt0.s
 main.rel            :   main.c \
                         bios.h System.h
-System.rel          :   System.c System.h \
+System.rel          :   System.c System.h Sound.h\
+                        bios.h vdp.h
+Sound.rel           :   Sound.c System.h Sound.h \
                         bios.h vdp.h
 App.rel             :   App.c App.h \
                         bios.h vdp.h System.h Title.h Game.h

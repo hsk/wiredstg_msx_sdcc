@@ -6,9 +6,6 @@
 #include "Game.h"
 #include "Enemy.h"
 #include "Bullet.h"
-// 定数の定義
-// ＳＥ
-static char const enemyBombSe[] = "T1V15L0O4GFEDCO3BAG";
 // 敵を生成する
 void EnemyBombGenerate(void) {
 }

@@ -1,5 +1,6 @@
 // System.h : システムライブラリ
 // フラグ
+#include "Sound.h"
 #define FLAG_H_TIMI             0
 #define FLAG_SOUND_SLEEP        1
 #define FLAG_CANCEL             7

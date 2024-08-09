@@ -99,12 +99,11 @@ void AppInitialize(void) {
         hl +=0x80;
     }
     _LDIRVM(#APP_PATTERN_GENERATOR_TABLE_0,#_patternTable,#0x1000);// パターンジェネレータの転送
-
     // 組み直し
     _LDIRVM(#(APP_PATTERN_GENERATOR_TABLE_0+0x1000),#(_patternTable+0x800),#0x800);// コピー生成
-    _LDIRVM(#(APP_PATTERN_GENERATOR_TABLE_0+16*8*38),#(_patternTable+16*8*12),#(16*8*4));// ボディ部分の組み替え
-    _LDIRVM(#(APP_PATTERN_GENERATOR_TABLE_0+16*8*42),#(_patternTable+16*8*26+8*6),#(8*6));// 残りの部分組み替え1
-    _LDIRVM(#(APP_PATTERN_GENERATOR_TABLE_0+16*8*43),#(_patternTable+16*8*27+8*6),#(8*6));// 残りの部分組み替え2
+    _LDIRVM(#(APP_PATTERN_GENERATOR_TABLE_0+16*8*38),#(_patternTable+16*8*12),#(16*8*6));// ビックコアボディ
+    _LDIRVM(#(APP_PATTERN_GENERATOR_TABLE_0+16*8*16),#(_patternTable+16*8*4),#(16*8*4));// 文字
+    _LDIRVM(#(APP_PATTERN_GENERATOR_TABLE_0+16*8*32),#(_patternTable+16*8*4),#(16*8*4));// 文字
 
     _FILVRM(#APP_COLOR_TABLE,#0x31,#0x0020);// カラーテーブルの転送
     _FILVRM(#APP_PATTERN_NAME_TABLE,#0,#0x0600);// パターンネームの初期化

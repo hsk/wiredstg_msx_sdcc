@@ -7,9 +7,6 @@
 #include "Ship.h"
 #include "Shot.h"
 #include "string.h"
-// 定数の定義
-// ＳＥ
-static char const shotSe[] = "T1V13L0O6CO5F+O6CO5F+CO4F+";
 // 変数の定義
 char shot[SHOT_SIZE * SHOT_N];// ショット
 static char shotTimer;// タイマ

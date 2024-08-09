@@ -21,10 +21,6 @@ static char const titleSpaceString[] = {// SPACE キー
     0x70, 0x72, 0x65, 0x73, 0x73, 0x00, 0x73, 0x70, 0x61, 0x63, 0x65, 0x00, 0x62, 0x61, 0x72, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
-// ジングル
-static char const titleJingle0[] = "T2V15-L1"/*"O4BO5DGBG5R7"*/"O5G5BGDO4BR7";
-static char const titleJingle1[] = "T2V15-L1"/*"O4DGBO5DO4B5R7"*/"O4B5O5DO4BGDR7";
-static char const titleJingle2[] = "T2V15-L1"/*"O3G4O4DO3G5R7"*/"O3G5O4DO3G4R7";
 // 変数の定義
 static char titleState;    // 状態
 static char titleAnimation;// アニメーション
@@ -33,7 +29,6 @@ static char titleTimer;    // タイマ
 void TitleInitialize(void) {
     SystemClearSprite();// スプライトのクリア
     memset(appPatternName,0,0x300);
-    //for(short i=0;i<0x300;i++)appPatternName[i]=0;// パターンのクリア
     AppTransferPatternName();// パターンネームの転送
     // パターンジェネレータの設定
     videoRegister[VDP_R4] = APP_PATTERN_GENERATOR_TABLE_0 >> 11;
@@ -52,14 +47,12 @@ static void updateInit(void) {
 static void updateAnim(void) {
     // アニメーションの更新
     if (titleAnimation<0x60)titleAnimation++;
-    //for(char b=titleAnimation,*hl=(void*)titleLogoString,*de=appPatternName + 0x00c0;b;--b)*de++ = *hl++; 
     memcpy(appPatternName + 0x00c0,titleLogoString,titleAnimation);
 }
 static void drawHiscore(void) {
     // ハイスコアの描画
     if (titleAnimation<0x60)return;
-    //for(char b=0x11,*hl=(void*)titleScoreString,*de=appPatternName + 0x0187;b;--b)*de++ = *hl++;
-    memcpy(appPatternName + 0x0187,titleScoreString,0x11);;
+    memcpy(appPatternName + 0x0187,titleScoreString,0x11);
     for(char b=6,*hl=appScore,*de=appPatternName + 0x0190;b;--b,hl++,de++) {
         if (*hl==0) continue;
         for(;b;--b) *de++ = *hl++ + 0x50;
@@ -67,7 +60,6 @@ static void drawHiscore(void) {
         break;
     }
     // SPACE キーの描画
-    //for(char b=0x0f,*hl=(void*)titleSpaceString+(titleTimer&0x10),*de=appPatternName + 0x0228;b;--b) *de++ = *hl++; 
     memcpy(appPatternName + 0x0228,titleSpaceString+(titleTimer&0x10),0xf);
 }
 // タイトルを更新する

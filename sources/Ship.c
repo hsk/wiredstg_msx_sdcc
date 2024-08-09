@@ -58,10 +58,6 @@ static char const shipSprite[] = {
     0xf7, 0xf8, 0x00, 0x00, 0xf7, 0x08, 0x00, 0x00,
     0xf7, 0xf8, 0x00, 0x00, 0xf7, 0x08, 0x00, 0x00,
 };
-// ＳＥ
-static char const shipSe[] =
-    //"T1V15L0O4GO2D-O4EO2D-O4CO2D-O3GO2D-O3EO2D-O3CO2D-O2GD-ED-"
-    "T1V15L0O3GO1D-O3EO1D-O3CO1D-O2GO1D-O2EO1D-O2CO1D-O1GD-ED-";
 // 変数の定義
 char ship[SHIP_SIZE];// 自機
 // 自機を初期化する

@@ -3,7 +3,7 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 
 ps = []
-image = pygame.image.load("pattern2.png")
+image = pygame.image.load("pattern3.png")
 (w,h)=image.get_size()
 for yy in range(h//8):
     for xx in range(w//8):

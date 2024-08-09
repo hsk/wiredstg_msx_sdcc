@@ -29,12 +29,6 @@ static char const enemyBigCoreBodyPatternName[] = {
     0x94, 0x95, 0x96, 0x97, 0x98, 0xa0, 0x99, 0x9a, 0x9b, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x90, 0x00, 0x00, 0x91, 0x92, 0x93, 0x00, 0x00, 0x00, 0x00,
 };
-// ＳＥ
-static char const enemyBigCoreSeHit[] = "T1V15-L0O7A";
-static char const enemyBigCoreSeBomb[] =
-    "T1V15L0"
-    "O3GO2D-O3EO2D-O3CO2D-O2GD-ED-"
-    "O2CO1D-O2D-O1CO2CO1D-O2D-O1CO2CO1D-O2D-O1CO2CO1D-O2D-O1C";
 // 敵を生成する
 void EnemyBigCoreGenerate(void) {
     // 敵の生成／コア
