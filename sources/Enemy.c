@@ -27,7 +27,7 @@ static FP const enemyGenerateProc[] = {
     EnemyNullGenerate,
     EnemyNullGenerate,
     EnemyNullGenerate,
-    EnemyBigCoreGenerate,
+    EnemyNullGenerate,
     0x0000,
     0x0000,
 };
@@ -80,9 +80,9 @@ static FP1 const enemyUpdateProc[] = {
     EnemyNullUpdate,
     EnemyNullUpdate,
     EnemyNullUpdate,
-    EnemyBigCoreUpdateCore,
-    EnemyBigCoreUpdateBody,
-    EnemyBeamUpdate,
+    EnemyNullUpdate,
+    EnemyNullUpdate,
+    EnemyNullUpdate,
 };
 // 描画
 static void EnemyNullRender(char*);
@@ -100,9 +100,9 @@ static FP1 const enemyRenderProc[] = {
     EnemyNullRender,
     EnemyNullRender,
     EnemyNullRender,
-    EnemyBigCoreRender,
-    EnemyBigCoreBodyRender,
-    EnemyBeamRender,
+    EnemyNullUpdate,
+    EnemyNullUpdate,
+    EnemyNullUpdate,
 };
 // 変数の定義
 char enemy[ENEMY_SIZE * ENEMY_N];// 敵
@@ -207,75 +207,13 @@ static void EnemyNullGenerate(void) {
             iy[ENEMY_GENERATOR_TIMER]=a;
             iy[ENEMY_GENERATOR_STATE]++;
         }
-        // ボス登場の条件
-        if (*(short*)&ship[SHIP_SHOT_L] < 0x30) {
-        //if (*(short*)&ship[SHIP_SHOT_L] < 0x100) {
-            // タイマの更新
-            iy[ENEMY_GENERATOR_TIMER]--;
-            if(iy[ENEMY_GENERATOR_TIMER]) return;
-            // 敵の生成
-            iy[ENEMY_GENERATOR_STATE] = 0;
-            iy[ENEMY_GENERATOR_TYPE] = enemyGenerateType[(SystemGetRandom()>>2)&0x1f];
-            return;
-            // 通常戦の完了
-        }
-        iy[ENEMY_GENERATOR_PHASE] = ENEMY_PHASE_WARNING;
-        iy[ENEMY_GENERATOR_STATE] = 0;
-        return;
-    }
-    if (a==ENEMY_PHASE_WARNING) {
-        // 警告の初期化
-        if (iy[ENEMY_GENERATOR_STATE]==0) {
-            iy[ENEMY_GENERATOR_TIMER] = 0x30;
-            iy[ENEMY_GENERATOR_STATE]++;
-        }
-        // 敵の監視
-        a = 0;
-        for(char b=enemyN,*hl = &enemy[ENEMY_TYPE];b;hl+=ENEMY_SIZE,b--)
-            a |= *hl;
-        if (a) return;
         // タイマの更新
-        if(--iy[ENEMY_GENERATOR_TIMER]) return;
-        // ビッグコアの生成
-        iy[ENEMY_GENERATOR_TYPE] = ENEMY_TYPE_BIGCORE_CORE;
+        iy[ENEMY_GENERATOR_TIMER]--;
+        if(iy[ENEMY_GENERATOR_TIMER]) return;
+        // 敵の生成
         iy[ENEMY_GENERATOR_STATE] = 0;
-        // パターンジェネレータの設定
-        videoRegister[VDP_R4] = (APP_PATTERN_GENERATOR_TABLE_2 >> 11);
-        // ビデオレジスタの転送
-        request |= 1<<REQUEST_VIDEO_REGISTER;
-        // 警告の完了
-        iy[ENEMY_GENERATOR_PHASE] = ENEMY_PHASE_BOSS;
-        iy[ENEMY_GENERATOR_STATE] = 0;
-        return;
+        iy[ENEMY_GENERATOR_TYPE] = enemyGenerateType[(SystemGetRandom()>>2)&0x1f];
     }
-    // ボス戦の開始
-    if (a!=ENEMY_PHASE_BOSS) return;
-    // ボス戦の初期化
-    if (iy[ENEMY_GENERATOR_STATE]==0){
-        iy[ENEMY_GENERATOR_TIMER] = 0x60;
-        iy[ENEMY_GENERATOR_STATE]++;
-    }
-    // ボスの監視
-    for(char* hl = enemy + ENEMY_TYPE,b = enemyN;b;hl += ENEMY_SIZE,--b)
-        if (*hl == ENEMY_TYPE_BIGCORE_BODY) return;
-    // タイマの更新
-    if(--iy[ENEMY_GENERATOR_TIMER]) return;
-    // 自機のリセット
-    *(short*)&ship[SHIP_SHOT_L] = 0;
-    // 敵の増加
-    enemyN+=3;
-    if (enemyN>ENEMY_N) enemyN = ENEMY_N;
-    // 弾の増加
-    bulletN+=3;
-    if (bulletN>BULLET_N) bulletN=BULLET_N;
-    // パターンジェネレータの設定
-    videoRegister[VDP_R4] = (APP_PATTERN_GENERATOR_TABLE_1 >> 11);
-    // ビデオレジスタの転送
-    request |= 1<<REQUEST_VIDEO_REGISTER;
-    // ボス戦の完了
-    enemyGenerator[ENEMY_GENERATOR_PHASE]=ENEMY_PHASE_NORMAL;
-    enemyGenerator[ENEMY_GENERATOR_STATE]=0;
-    // 生成の完了
 }
 // ENEMY_TYPE_NULL を更新する
 static void EnemyNullUpdate(char* ix) {
