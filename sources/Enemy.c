@@ -23,10 +23,10 @@ static FP const enemyGenerateProc[] = {
     EnemyRugalGenerate,
     EnemyGarunGenerate,
     EnemyGarunGenerate,
-    EnemyDee01Generate,
-    EnemyDee01Generate,
-    EnemyDuckerGenerate,
-    EnemyDuckerGenerate,
+    EnemyNullGenerate,
+    EnemyNullGenerate,
+    EnemyNullGenerate,
+    EnemyNullGenerate,
     EnemyBigCoreGenerate,
     0x0000,
     0x0000,
@@ -76,10 +76,10 @@ static FP1 const enemyUpdateProc[] = {
     EnemyRugalUpdate,
     EnemyGarunUpdate,
     EnemyGarunUpdate,
-    EnemyDee01Update,
-    EnemyDee01Update,
-    EnemyDuckerUpdate,
-    EnemyDuckerUpdate,
+    EnemyNullUpdate,
+    EnemyNullUpdate,
+    EnemyNullUpdate,
+    EnemyNullUpdate,
     EnemyBigCoreUpdateCore,
     EnemyBigCoreUpdateBody,
     EnemyBeamUpdate,
@@ -96,10 +96,10 @@ static FP1 const enemyRenderProc[] = {
     EnemyPutPattern16x16,
     EnemyPutPattern16x16,
     EnemyPutPattern16x16,
-    EnemyPutPattern16x16,
-    EnemyPutPattern16x16,
-    EnemyPutPattern16x16,
-    EnemyPutPattern16x16,
+    EnemyNullRender,
+    EnemyNullRender,
+    EnemyNullRender,
+    EnemyNullRender,
     EnemyBigCoreRender,
     EnemyBigCoreBodyRender,
     EnemyBeamRender,
@@ -187,6 +187,7 @@ void EnemyUpdate(void) {
 }
 // 敵を描画する
 void EnemyRender(void) {
+    memset(appPatternName,0,0x300);
     // 種類別の描画
     for(char b=enemyN,*ix=enemy;b;b--,ix+=ENEMY_SIZE) {
         fpcall1(enemyRenderProc[ix[ENEMY_TYPE]],ix);

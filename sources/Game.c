@@ -4,7 +4,6 @@
 #include "System.h"
 #include "App.h"
 #include "Game.h"
-#include "Ground.h"
 #include "Ship.h"
 #include "Shot.h"
 #include "Enemy.h"
@@ -27,7 +26,6 @@ char gameScroll;// スクロール
 // ゲームを初期化する
 void GameInitialize(void) {
     // ゲームの初期化
-    GroundInitialize(); // 地面の初期化
     ShipInitialize(); // 自機の初期化
     ShotInitialize(); // ショットの初期化
     EnemyInitialize(); // 敵の初期化
@@ -68,12 +66,10 @@ static void GamePlay(void) {
     SystemClearSprite();// スプライトのクリア
     gameScroll = (gameScroll+1)&0x0f;// スクロールの更新
     GameHitCheck(); // ヒットチェック
-    GroundUpdate(); // 地面の更新
     ShipUpdate(); // 自機の更新
     ShotUpdate(); // ショットの更新
     EnemyUpdate(); // 敵の更新
     BulletUpdate(); // 弾の更新
-    GroundRender(); // 地面の描画
     ShipRender(); // 自機の描画
     ShotRender(); // ショットの描画
     EnemyRender(); // 敵の描画
@@ -107,15 +103,14 @@ static void GameHitCheck(void) {
                 iy[ENEMY_TYPE] = ENEMY_TYPE_BOMB;
                 iy[ENEMY_STATE] = 0;
             }
-        } else if(ground[de]==0)continue;
-        ix[SHOT_STATE] = 0;
+            ix[SHOT_STATE] = 0;
+        }
     }
     #if 1
     // 弾のチェック
     for(char b=bulletN,*ix=bullet;b;b--,ix+=BULLET_SIZE) {
         if (ix[BULLET_STATE]==0)continue;
-        unsigned short de = ((unsigned short)(ix[BULLET_POSITION_YI]&0xf8))*4+(ix[BULLET_POSITION_XI]>>3);
-        if (ground[de]==0) {
+        {
             if (ship[SHIP_TYPE]!=SHIP_TYPE_VICVIPER) continue;
             signed short a = ((signed short)ship[SHIP_POSITION_X])-ix[BULLET_POSITION_XI];
             if (a < -4 || 4 < a) continue;
@@ -131,7 +126,7 @@ static void GameHitCheck(void) {
     if (ship[SHIP_TYPE] != SHIP_TYPE_VICVIPER) return;
     u16 tmp =
         ((ship[SHIP_POSITION_Y]&0xf8)<<2)+(ship[SHIP_POSITION_X]>>3);
-    if (enemyCollision[tmp]==0 && ground[tmp]==0) return;
+    if (enemyCollision[tmp]==0) return;
     //if(--ship[SHIP_HP]) return;
     ship[SHIP_TYPE] = SHIP_TYPE_BOMB;
     ship[SHIP_STATE] = 0;
