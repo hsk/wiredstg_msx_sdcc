@@ -16,7 +16,6 @@
 // 種類
 #define SHIP_TYPE_NULL     0x00
 #define SHIP_TYPE_VICVIPER 0x01
-#define SHIP_TYPE_BOMB     0x02
 // 状態
 #define SHIP_STATE_NULL    0x00
 // 外部関数宣言

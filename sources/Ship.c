@@ -65,13 +65,11 @@ void ShipInitialize(void) {
     memcpy(ship,(void*)shipDefault,SHIP_SIZE);// 自機の初期化
 }
 static void ShipPlay(void);
-static void ShipBomb(void);
 // 自機を更新する
 void ShipUpdate(void) {
     char a = ship[SHIP_TYPE];
     // 種類別の処理
     if (a == SHIP_TYPE_VICVIPER)  ShipPlay();
-    else if (a == SHIP_TYPE_BOMB) ShipBomb();
     // スプライトの更新
     short hl = *(short*)&ship[SHIP_SPRITE_0];
     *(short*)&ship[SHIP_SPRITE_0] = *(short*)&ship[SHIP_SPRITE_1];
@@ -101,24 +99,6 @@ static void ShipPlay(void) {
     if (input[INPUT_BUTTON_SPACE] == 1) {
         ShotGenerate();
         (*(short*)&ship[SHIP_SHOT_L])++;
-    }
-}
-// 自機が爆発する
-static void ShipBomb(void) {
-    // 初期化の開始
-    if (ship[SHIP_STATE]==0) {
-        ship[SHIP_ANIMATION] = 3;// アニメーションの設定
-        ship[SHIP_TIMER] = 4;// タイマの設定
-        ship[SHIP_STATE]++;// 初期化の完了
-    }
-    // アニメーションの更新
-    if (--ship[SHIP_TIMER] == 0) {
-        ship[SHIP_TIMER] = 4;
-        if (++ship[SHIP_ANIMATION] == 0x0b) {
-            // 自機の削除
-            ship[SHIP_TYPE] = 0;
-            ship[SHIP_STATE] = 0;
-        }
     }
 }
 // 自機を描画する
