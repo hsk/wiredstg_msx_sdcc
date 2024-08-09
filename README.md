@@ -1,4 +1,4 @@
-# WIREDSTG MSX on C
+# WIREDSTG MSX SDCC
 
 C言語でぽいゲームを動かします。
 
@@ -27,3 +27,22 @@ C言語でぽいゲームを動かします。
           - EnemyRugal.c  敵キャラ 寄ってくる
           - EnemyBigCore.c ビックコア
             - EnemyBeam.c ビックコアのビーム
+
+## 各ステップで行うこと
+
+WRIREDSTG MSX SDCC は以下のステップで段階的に作ることができます:
+
+1. [自機を動かす](https://github.com/hsk/wiredstg_msx_sdcc/compare/0..1)
+2. [敵機を出現させる](https://github.com/hsk/wiredstg_msx_sdcc/compare/1..2)
+3. [自機弾をうち当たり判定をつける](https://github.com/hsk/wiredstg_msx_sdcc/compare/2..3)
+4. [敵球を撃ってくる](https://github.com/hsk/wiredstg_msx_sdcc/compare/3..4)
+5. [自機に当たり判定](https://github.com/hsk/wiredstg_msx_sdcc/compare/4..5)
+6. [敵機の種類を増やす](https://github.com/hsk/wiredstg_msx_sdcc/compare/5..6)
+7. [ビックコアを作る](https://github.com/hsk/wiredstg_msx_sdcc/compare/6..7)
+8. [背景生成](https://github.com/hsk/wiredstg_msx_sdcc/compare/7..8)
+9. [星を流す](https://github.com/hsk/wiredstg_msx_sdcc/compare/8..9)
+10. [タイトル画面を出す](https://github.com/hsk/wiredstg_msx_sdcc/compare/9..10)
+11. [タイトル画面をアニメーションさせる](https://github.com/hsk/wiredstg_msx_sdcc/compare/10..11)
+12. [スコアをつける](https://github.com/hsk/wiredstg_msx_sdcc/compare/11..12)
+13. [スピードをつける](https://github.com/hsk/wiredstg_msx_sdcc/compare/12..13)
+14. [音をつける](https://github.com/hsk/wiredstg_msx_sdcc/compare/13..14)

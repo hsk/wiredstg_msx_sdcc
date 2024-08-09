@@ -74,16 +74,17 @@ void EnemyBeamRender(char* ix) {
         short bc = *(short*)&ix[ENEMY_PARAM_0];
         char *de = appPatternName + 0x0043 + bc;
         char *hl = enemyCollision + 0x0043 + bc;
+        char a = ix[ENEMY_INDEX];
         for(char b = ix[ENEMY_PARAM_3];b;b--){
             *de++ = 0xb4;
-            *hl++ = ix[ENEMY_INDEX];
+            *hl++ = a;
         }
         char c = #0x40 - ix[ENEMY_PARAM_3];
         hl += c;
         de += c;
         for(char b = ix[ENEMY_PARAM_3];b;b--){
-            *de++ += 0xb4;
-            *hl++ += ix[ENEMY_INDEX];
+            *de++ = 0xb4;
+            *hl++ = a;
         }
     }
 }
