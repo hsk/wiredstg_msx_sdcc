@@ -4,9 +4,7 @@ main.rel            :   main.c \
 System.rel          :   System.c System.h \
                         bios.h vdp.h
 App.rel             :   App.c App.h \
-                        bios.h vdp.h System.h Title.h Game.h
-Title.rel           :   Title.c Title.h \
-                        bios.h vdp.h System.h App.h
+                        bios.h vdp.h System.h Game.h
 Game.rel            :   Game.c Game.h \
                         bios.h vdp.h System.h App.h Ground.h Ship.h Shot.h Enemy.h Bullet.h
 Ground.rel          :   Ground.c Ground.h \

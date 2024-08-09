@@ -3,7 +3,6 @@
 #include "vdp.h"
 #include "System.h"
 #include "App.h"
-#include "Title.h"
 #include "Game.h"
 #include "string.h"
 // 外部変数宣言
@@ -105,15 +104,13 @@ void AppInitialize(void) {
     _FILVRM(#APP_PATTERN_NAME_TABLE,#0,#0x0600);// パターンネームの初期化
     __asm ei __endasm; // 割り込み禁止の解除
     appColor = 3;// 色の初期化
-    appState = APP_STATE_TITLE_INITIALIZE;// 状態の初期化
+    appState = APP_STATE_GAME_INITIALIZE;// 状態の初期化
 }
 // アプリケーションを更新する
 void AppUpdate(void) {
     char a = appState;// 状態の取得
-    if (a == APP_STATE_TITLE_INITIALIZE)     TitleInitialize(); // タイトルの初期化
-    else if (a == APP_STATE_TITLE_UPDATE)    TitleUpdate();     // タイトルの更新
-    else if (a == APP_STATE_GAME_INITIALIZE) GameInitialize();  // ゲームの初期化
-    else /*if (a == APP_STATE_GAME_UPDATE)*/ GameUpdate();      // ゲームの更新
+    if (a == APP_STATE_GAME_INITIALIZE) GameInitialize();  // ゲームの初期化
+    else /*if (a == APP_STATE_GAME_UPDATE)*/ GameUpdate(); // ゲームの更新
 }
 // パターンネームを転送する
 void AppTransferPatternName(void) {
