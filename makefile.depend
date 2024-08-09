@@ -17,11 +17,7 @@ Enemy.rel           :   Enemy.c Enemy.h \
                         bios.h vdp.h System.h App.h Game.h Ship.h Bullet.h
 EnemyBomb.rel       :   EnemyBomb.c \
                         bios.h vdp.h System.h App.h Game.h Enemy.h Bullet.h
-EnemyFans.rel       :   EnemyFans.c \
-                        bios.h vdp.h System.h App.h Game.h Ship.h Enemy.h Bullet.h
 EnemyRugal.rel      :   EnemyRugal.c \
-                        bios.h vdp.h System.h App.h Game.h Ship.h Enemy.h Bullet.h
-EnemyGarun.rel      :   EnemyGarun.c \
                         bios.h vdp.h System.h App.h Game.h Ship.h Enemy.h Bullet.h
 
 pattern.rel         :   pattern.c
