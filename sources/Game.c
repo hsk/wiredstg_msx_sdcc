@@ -7,7 +7,6 @@
 #include "Ship.h"
 #include "Shot.h"
 #include "Enemy.h"
-#include "Bullet.h"
 #include "string.h"
 // 状態
 #define GAME_STATE_NULL 0x00
@@ -29,7 +28,6 @@ void GameInitialize(void) {
     ShipInitialize(); // 自機の初期化
     ShotInitialize(); // ショットの初期化
     EnemyInitialize(); // 敵の初期化
-    BulletInitialize(); // 弾の初期化
     gamePause = 0;// 一時停止の初期化
     gameScroll = 0;// スクロールの初期化
     memset(appPatternName,0,0x300);// パターンのクリア
@@ -69,11 +67,9 @@ static void GamePlay(void) {
     ShipUpdate(); // 自機の更新
     ShotUpdate(); // ショットの更新
     EnemyUpdate(); // 敵の更新
-    BulletUpdate(); // 弾の更新
     ShipRender(); // 自機の描画
     ShotRender(); // ショットの描画
     EnemyRender(); // 敵の描画
-    BulletRender(); // 弾の描画
     AppTransferPatternName(); // パターンネームの転送
     if (ship[SHIP_TYPE])return;// ゲームオーバーの条件
     gameState = GAME_STATE_OVER; // ゲームオーバー

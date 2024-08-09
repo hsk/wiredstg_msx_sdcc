@@ -6,7 +6,6 @@
 #include "Game.h"
 #include "Ship.h"
 #include "Enemy.h"
-#include "Bullet.h"
 #include "string.h"
 // 定数の定義
 // ジェネレータ

@@ -5,7 +5,6 @@
 #include "App.h"
 #include "Game.h"
 #include "Enemy.h"
-#include "Bullet.h"
 // 敵を生成する
 void EnemyBombGenerate(void) {
 }
@@ -15,7 +14,6 @@ void EnemyBombUpdate(char* ix) {
     if(ix[ENEMY_STATE]==0){
         ix[ENEMY_ANIMATION] = 0x40;// アニメーションの設定
         ix[ENEMY_TIMER] = 2;// タイマの設定
-        BulletGenerate((ix[ENEMY_POSITION_X]<<8)|ix[ENEMY_POSITION_Y]);// 撃ち返し
         ix[ENEMY_STATE]++;// 初期化の完了
     }
     // アニメーションの更新

@@ -7,7 +7,6 @@
 #include "Game.h"
 #include "Ship.h"
 #include "Enemy.h"
-#include "Bullet.h"
 // 敵を生成する
 void EnemyRugalGenerate(void) {
     char* iy = enemyGenerator;
@@ -46,8 +45,6 @@ void EnemyRugalUpdate(char* ix) {
     if (ix[ENEMY_STATE]==0){
         ix[ENEMY_PARAM_0] = 0;// パラメータの設定
         ix[ENEMY_PARAM_1] = ((ix[ENEMY_TYPE] - ENEMY_TYPE_RUGAL_FRONT)<<5)+0x68;
-        // ショットの設定
-        ix[ENEMY_SHOT] = (SystemGetRandom()&0x3f)+0x40;
         ix[ENEMY_ANIMATION] = ix[ENEMY_PARAM_1];// アニメーションの設定
         ix[ENEMY_TIMER] = 0x40;// タイマの設定
         ix[ENEMY_STATE]++;// 初期化の完了
@@ -73,11 +70,6 @@ void EnemyRugalUpdate(char* ix) {
             ix[ENEMY_PARAM_0] = a;
             ix[ENEMY_ANIMATION] = a*2 + ix[ENEMY_PARAM_1];
             ix[ENEMY_TIMER] = (SystemGetRandom()&0x3f)+0x10;
-        }
-        // ショットの更新
-        if (--ix[ENEMY_SHOT] == 0) {
-            BulletGenerate((ix[ENEMY_POSITION_X]<<8)|ix[ENEMY_POSITION_Y]);
-            ix[ENEMY_SHOT] = (SystemGetRandom()&0x3f)+0x40;
         }
         return;
     }
