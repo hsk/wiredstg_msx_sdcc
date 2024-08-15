@@ -7,3 +7,5 @@
 // 外部関数宣言
 void GameInitialize(void);
 void GameUpdate(void);
+// 外部変数宣言
+extern char gameScroll;

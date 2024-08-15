@@ -6,7 +6,9 @@ System.rel          :   System.c System.h \
 App.rel             :   App.c App.h \
                         bios.h vdp.h System.h Game.h
 Game.rel            :   Game.c Game.h \
-                        bios.h vdp.h System.h App.h Ship.h Shot.h Enemy.h Bullet.h
+                        bios.h vdp.h System.h App.h Ground.h Ship.h Shot.h Enemy.h Bullet.h
+Ground.rel          :   Ground.c Ground.h \
+                        bios.h vdp.h System.h App.h Game.h
 Ship.rel            :   Ship.c Ship.h \
                         bios.h vdp.h System.h App.h Game.h Shot.h
 Shot.rel            :   Shot.c Shot.h \
@@ -23,6 +25,10 @@ EnemyRugal.rel      :   EnemyRugal.c \
                         bios.h vdp.h System.h App.h Game.h Ship.h Enemy.h Bullet.h
 EnemyGarun.rel      :   EnemyGarun.c \
                         bios.h vdp.h System.h App.h Game.h Ship.h Enemy.h Bullet.h
+EnemyDee01.rel      :   EnemyDee01.c \
+                        bios.h vdp.h System.h App.h Game.h Ground.h Ship.h Enemy.h Bullet.h
+EnemyDucker.rel     :   EnemyDucker.c \
+                        bios.h vdp.h System.h App.h Game.h Ground.h Ship.h Enemy.h Bullet.h
 EnemyBigCore.rel    :   EnemyBigCore.c \
                         bios.h vdp.h System.h App.h Game.h Ship.h Enemy.h
 EnemyBeam.rel       :   EnemyBeam.c \
