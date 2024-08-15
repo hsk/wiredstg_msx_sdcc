@@ -1,0 +1,13 @@
+crt0.rel            :   crt0.s
+main.rel            :   main.c \
+                        bios.h System.h
+System.rel          :   System.c System.h \
+                        bios.h vdp.h
+App.rel             :   App.c App.h \
+                        bios.h vdp.h System.h Game.h
+Game.rel            :   Game.c Game.h \
+                        bios.h vdp.h System.h App.h Ship.h
+Ship.rel            :   Ship.c Ship.h \
+                        bios.h vdp.h System.h App.h Game.h
+
+pattern.rel         :   pattern.c
