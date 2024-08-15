@@ -5,6 +5,7 @@
 #include "App.h"
 #include "Game.h"
 #include "Ship.h"
+#include "Shot.h"
 #include "string.h"
 // 定数の定義
 // 自機の初期値
@@ -95,6 +96,11 @@ static void ShipPlay(void) {
     } else if (input[INPUT_KEY_RIGHT]) {
         ship[SHIP_POSITION_X] += 2;
         if (ship[SHIP_POSITION_X]>0xf6)ship[SHIP_POSITION_X]=0xf6;
+    }
+    // ショット
+    if (input[INPUT_BUTTON_SPACE] == 1) {
+        ShotGenerate();
+        (*(short*)&ship[SHIP_SHOT_L])++;
     }
 }
 // 自機を描画する

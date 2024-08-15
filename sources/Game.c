@@ -5,6 +5,7 @@
 #include "App.h"
 #include "Game.h"
 #include "Ship.h"
+#include "Shot.h"
 #include "Enemy.h"
 #include "string.h"
 // 状態
@@ -17,6 +18,7 @@ static char gamePause;// 一時停止
 void GameInitialize(void) {
     // ゲームの初期化
     ShipInitialize(); // 自機の初期化
+    ShotInitialize(); // ショットの初期化
     EnemyInitialize(); // 敵の初期化
     gamePause = 0;// 一時停止の初期化
     memset(appPatternName,0,0x300);// パターンのクリア
@@ -29,7 +31,7 @@ void GameInitialize(void) {
     appState = APP_STATE_GAME_UPDATE;
 }
 static void GamePlay(void);
-static void GameOver(void);
+static void GameHitCheck(void);
 // ゲームを更新する
 void GameUpdate(void) {
     // ESC キーで一時停止
@@ -48,9 +50,29 @@ static void GamePlay(void) {
         gameState++;// 初期化の完了
     }
     SystemClearSprite();// スプライトのクリア
+    GameHitCheck(); // ヒットチェック
     ShipUpdate(); // 自機の更新
+    ShotUpdate(); // ショットの更新
     EnemyUpdate(); // 敵の更新
     ShipRender(); // 自機の描画
+    ShotRender(); // ショットの描画
     EnemyRender(); // 敵の描画
     AppTransferPatternName(); // パターンネームの転送
+}
+// ヒットチェックを行う
+static void GameHitCheck(void) {
+    // ショットのチェック
+    for(char *ix = shot, b = SHOT_N,c = 0;b;ix += SHOT_SIZE,--b) {
+        if(ix[SHOT_STATE]==0)continue;
+        unsigned short de = ((unsigned short)(ix[SHOT_POSITION_Y]&0xf8))*4+(ix[SHOT_POSITION_X]>>3);
+        char a = enemyCollision[de]; 
+        if (a) {
+            char* iy = enemy -16 + a*16;
+            if (--iy[ENEMY_HP]==0) {
+                iy[ENEMY_TYPE] = ENEMY_TYPE_BOMB;
+                iy[ENEMY_STATE] = 0;
+            }
+            ix[SHOT_STATE] = 0;
+        }
+    }
 }

@@ -51,6 +51,8 @@ void EnemyInitialize(void);
 void EnemyUpdate(void);
 void EnemyRender(void);
 char* EnemyGetEmpty(void);
+void EnemyBombUpdate(char* ix);
+void EnemyBombRender(char* ix);
 void EnemyRugalGenerate(void);
 void EnemyRugalUpdate(char* ix);
 // 外部変数宣言

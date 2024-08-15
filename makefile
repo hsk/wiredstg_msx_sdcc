@@ -78,8 +78,8 @@ ASSRCS			=	crt0.s
 CSRCS			=	\
 				main.c System.c \
 				App.c \
-				Game.c Ship.c \
-				Enemy.c EnemyRugal.c \
+				Game.c Ship.c Shot.c \
+				Enemy.c EnemyBomb.c EnemyRugal.c \
 				pattern.c
 
 # object files
