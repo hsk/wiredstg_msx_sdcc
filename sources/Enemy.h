@@ -28,6 +28,8 @@
 // 段階
 #define ENEMY_PHASE_NULL        0x00
 #define ENEMY_PHASE_NORMAL      0x01
+#define ENEMY_PHASE_WARNING     0x02
+#define ENEMY_PHASE_BOSS        0x03
 // 種類
 #define ENEMY_TYPE_NULL         0x00
 #define ENEMY_TYPE_BOMB         0x01

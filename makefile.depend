@@ -23,5 +23,9 @@ EnemyRugal.rel      :   EnemyRugal.c \
                         bios.h vdp.h System.h App.h Game.h Ship.h Enemy.h Bullet.h
 EnemyGarun.rel      :   EnemyGarun.c \
                         bios.h vdp.h System.h App.h Game.h Ship.h Enemy.h Bullet.h
+EnemyBigCore.rel    :   EnemyBigCore.c \
+                        bios.h vdp.h System.h App.h Game.h Ship.h Enemy.h
+EnemyBeam.rel       :   EnemyBeam.c \
+                        bios.h vdp.h System.h App.h Game.h Enemy.h
 
 pattern.rel         :   pattern.c
