@@ -79,13 +79,17 @@ void ShipUpdate(void) {
 } 
 // 自機を操作する
 static void ShipPlay(void) {
+    // スピードアップ
+    if (input[INPUT_BUTTON_SHIFT]==1) {
+        if(++ship[SHIP_SPEED] == 5) ship[SHIP_SPEED] = 1;
+    }
     // ↑↓の移動
     if (input[INPUT_KEY_UP]) {
-        ship[SHIP_POSITION_Y] -= 2;
+        ship[SHIP_POSITION_Y] -= ship[SHIP_SPEED];
         if (ship[SHIP_POSITION_Y]<0x10)ship[SHIP_POSITION_Y]=0x10;
         ship[SHIP_ANIMATION] = 0x02;
     } else if (input[INPUT_KEY_DOWN]) {
-        ship[SHIP_POSITION_Y] += 2;
+        ship[SHIP_POSITION_Y] += ship[SHIP_SPEED];
         if (ship[SHIP_POSITION_Y]>0xb7)ship[SHIP_POSITION_Y]=0xb7;
         ship[SHIP_ANIMATION] = 0x01;
     } else {
@@ -93,10 +97,10 @@ static void ShipPlay(void) {
     }
     // ←→の移動
     if (input[INPUT_KEY_LEFT]) {
-        ship[SHIP_POSITION_X] -= 2;
+        ship[SHIP_POSITION_X] -= ship[SHIP_SPEED];
         if (ship[SHIP_POSITION_X]<0xc)ship[SHIP_POSITION_X]=0xc;
     } else if (input[INPUT_KEY_RIGHT]) {
-        ship[SHIP_POSITION_X] += 2;
+        ship[SHIP_POSITION_X] += ship[SHIP_SPEED];
         if (ship[SHIP_POSITION_X]>0xf6)ship[SHIP_POSITION_X]=0xf6;
     }
     // ショット

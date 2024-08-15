@@ -203,4 +203,6 @@ static void GameUpdateScore(void) {
             break;
         }
     }
+    // 速度の描画
+    memcpy(&appPatternName[0x1d],&gameSpeedString[ship[SHIP_SPEED]*2],2);
 }
