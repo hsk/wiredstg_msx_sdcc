@@ -6,16 +6,18 @@ System.rel          :   System.c System.h \
 App.rel             :   App.c App.h \
                         bios.h vdp.h System.h Game.h
 Game.rel            :   Game.c Game.h \
-                        bios.h vdp.h System.h App.h Ship.h Shot.h Enemy.h
+                        bios.h vdp.h System.h App.h Ship.h Shot.h Enemy.h Bullet.h
 Ship.rel            :   Ship.c Ship.h \
                         bios.h vdp.h System.h App.h Game.h Shot.h
 Shot.rel            :   Shot.c Shot.h \
                         bios.h vdp.h System.h App.h Game.h Ship.h
+Bullet.rel          :   Bullet.c Bullet.h \
+                        bios.h vdp.h System.h App.h Game.h
 Enemy.rel           :   Enemy.c Enemy.h \
-                        bios.h vdp.h System.h App.h Game.h Ship.h
+                        bios.h vdp.h System.h App.h Game.h Ship.h Bullet.h
 EnemyBomb.rel       :   EnemyBomb.c \
-                        bios.h vdp.h System.h App.h Game.h Enemy.h
+                        bios.h vdp.h System.h App.h Game.h Enemy.h Bullet.h
 EnemyRugal.rel      :   EnemyRugal.c \
-                        bios.h vdp.h System.h App.h Game.h Ship.h Enemy.h
+                        bios.h vdp.h System.h App.h Game.h Ship.h Enemy.h Bullet.h
 
 pattern.rel         :   pattern.c
