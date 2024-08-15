@@ -16,6 +16,20 @@
 #define GAME_STATE_PLAY 0x10
 #define GAME_STATE_OVER 0x20
 // 定数の定義
+// スコア
+static char const gameScoreString[] = {
+    0x11, 0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00,
+    0x28, 0x29, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+};
+// 速度
+static char const gameSpeedString[] = {
+    0x00, 0x00,
+    0x00, 0x46,
+    0x00, 0x47,
+    0x46, 0x47,
+    0x47, 0x47,
+};
 // ゲームオーバー
 static char const gameOverString[] = {
     0x27, 0x21, 0x2d, 0x25, 0x00, 0x00, 0x2f, 0x36, 0x25, 0x32,
@@ -23,6 +37,7 @@ static char const gameOverString[] = {
 // 変数の定義
 static char gameState;// 状態
 static char gamePause;// 一時停止
+static char gameScore[6];// スコア
 static char gameScorePlus;
 char gameScroll;// スクロール
 // ゲームを初期化する
@@ -35,6 +50,8 @@ void GameInitialize(void) {
     EnemyInitialize(); // 敵の初期化
     BulletInitialize(); // 弾の初期化
     gamePause = 0;// 一時停止の初期化
+    memset(gameScore,0,6);// スコアの初期化
+    gameScorePlus = 0;
     gameScroll = 0;// スクロールの初期化
     memset(appPatternName,0,0x300);// パターンのクリア
     // パターンネームの転送
@@ -48,6 +65,7 @@ void GameInitialize(void) {
 static void GamePlay(void);
 static void GameOver(void);
 static void GameHitCheck(void);
+static void GameUpdateScore(void);
 // ゲームを更新する
 void GameUpdate(void) {
     // ESC キーで一時停止
@@ -68,6 +86,7 @@ static void GamePlay(void) {
         gameState++;// 初期化の完了
     }
     SystemClearSprite();// スプライトのクリア
+    gameScorePlus = 0;// 加算されるスコアのクリア
     gameScroll = (gameScroll+1)&0x0f;// スクロールの更新
     GameHitCheck(); // ヒットチェック
     GroundUpdate(); // 地面の更新
@@ -82,6 +101,7 @@ static void GamePlay(void) {
     ShotRender(); // ショットの描画
     EnemyRender(); // 敵の描画
     BulletRender(); // 弾の描画
+    GameUpdateScore(); // スコアの更新
     AppTransferPatternName(); // パターンネームの転送
     if (ship[SHIP_TYPE])return;// ゲームオーバーの条件
     gameState = GAME_STATE_OVER; // ゲームオーバー
@@ -100,6 +120,7 @@ static void GameOver(void) {
 }
 // ヒットチェックを行う
 static void GameHitCheck(void) {
+    gameScorePlus = 0;// 加算されるスコアの設定
     // ショットのチェック
     for(char *ix = shot, b = SHOT_N,c = 0;b;ix += SHOT_SIZE,--b) {
         if(ix[SHOT_STATE]==0)continue;
@@ -110,6 +131,7 @@ static void GameHitCheck(void) {
             if (--iy[ENEMY_HP]==0) {
                 iy[ENEMY_TYPE] = ENEMY_TYPE_BOMB;
                 iy[ENEMY_STATE] = 0;
+                gameScorePlus++;
             }
         } else if(ground[de]==0)continue;
         ix[SHOT_STATE] = 0;
@@ -140,4 +162,45 @@ static void GameHitCheck(void) {
     ship[SHIP_TYPE] = SHIP_TYPE_BOMB;
     ship[SHIP_STATE] = 0;
     #endif
+}
+// スコアを更新する
+static void GameUpdateScore(void) {
+    // スコアの更新
+    if (gameScorePlus) {
+        char b=6;
+        for(char a = gameScorePlus,*hl = gameScore+5;b;hl--,a=1,b--) {
+            a += *hl;
+            *hl = a;
+            a -= 10;
+            if (a & 0x80) break;
+            *hl = a;
+        }
+        if(!b) memset(gameScore,9,6);
+        else // 小さかったらコピる
+            for(char *hl = gameScore,*de = appScore,b=6;b;hl++,de++,b--) {
+                if (*de > *hl) break;
+                if (*de < *hl) {
+                    memcpy(de,hl,b);
+                    break;
+                }
+            }
+    }
+    // 初期文字列の転送
+    memcpy(appPatternName,gameScoreString,0x20);
+    // スコアの描画
+    for(char *hl = gameScore,*de = appPatternName + 3,b = 6;b;hl++,de++,b--) {
+        if (*hl) {
+            for(;b;hl++,de++,b--) *de = *hl + 0x10;
+            *de=0x10;
+            break;
+        }
+    }
+    // ハイスコアの描画
+    for(char *hl = appScore,*de = appPatternName + 0xf,b = 6;b;hl++,de++,b--) {
+        if (*hl) {
+            for(;b;hl++,de++,b--) *de = *hl +0x10;
+            *de=0x10;
+            break;
+        }
+    }
 }

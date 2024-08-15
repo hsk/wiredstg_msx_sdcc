@@ -20,9 +20,13 @@ static char const videoScreen1[] = {
     APP_SPRITE_GENERATOR_TABLE >> 11,
     0b00000111,
 };
+// スコア
+//static char const appScoreDefault[] = { 0x00, 0x00, 0x00, 0x05, 0x07, 0x03, };
+static char const appScoreDefault[] = { 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, };
 // 変数の定義
 char appState;// 状態
 char appColor;// 色
+char appScore[6];// スコア
 char appPatternName[0x300];// パターンネーム
 typedef void(*FP0)(void);
 // アプリケーションを初期化する
@@ -105,6 +109,7 @@ void AppInitialize(void) {
     _FILVRM(#APP_PATTERN_NAME_TABLE,#0,#0x0600);// パターンネームの初期化
     __asm ei __endasm; // 割り込み禁止の解除
     appColor = 3;// 色の初期化
+    memcpy(appScore,appScoreDefault,6);// スコアの初期化
     appState = APP_STATE_TITLE_INITIALIZE;// 状態の初期化
 }
 // アプリケーションを更新する

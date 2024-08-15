@@ -20,4 +20,5 @@ void AppTransferPatternName(void);
 // 外部変数宣言
 extern char appState;// 状態
 extern char appColor;
+extern char appScore[6];
 extern char appPatternName[0x0300];
