@@ -20,6 +20,7 @@ static char const titleSpaceString[] = {// SPACE キー
 };
 // 変数の定義
 static char titleState;    // 状態
+static char titleAnimation;// アニメーション
 static char titleTimer;    // タイマ
 // タイトルを初期化する
 void TitleInitialize(void) {
@@ -35,14 +36,21 @@ void TitleInitialize(void) {
 }
 static void updateInit(void) {
     if (titleState==0) {// 初期化の開始
-        // アニメーションの更新
-        memcpy(appPatternName + 0x00c0,titleLogoString,0x60);
-        // SPACE キーの描画
-        memcpy(appPatternName + 0x0228,titleSpaceString,0xf);
-        AppTransferPatternName();
+        titleAnimation = 0; // アニメーションの初期化
         titleTimer = 0;     // タイマの初期化
         titleState++;       // 初期化の完了
     }
+}
+static void updateAnim(void) {
+    // アニメーションの更新
+    if (titleAnimation<0x60)titleAnimation++;
+    memcpy(appPatternName + 0x00c0,titleLogoString,titleAnimation);
+}
+static void drawSpace(void) {
+    // ハイスコアの描画
+    if (titleAnimation<0x60)return;
+    // SPACE キーの描画
+    memcpy(appPatternName + 0x0228,titleSpaceString+(titleTimer&0x10),0xf);
 }
 // タイトルを更新する
 void TitleUpdate(void) {
@@ -52,6 +60,7 @@ void TitleUpdate(void) {
         titleTimer++;// タイマの更新
         if (input[INPUT_BUTTON_SPACE]==1) {// SPACE キーの押下
             titleState++;
+            titleAnimation=0x60;// アニメーションの設定
             titleTimer=0;
         }
     } else {
@@ -62,4 +71,7 @@ void TitleUpdate(void) {
             appState = APP_STATE_GAME_INITIALIZE;// ゲームの開始
         }
     }
+    updateAnim();
+    drawSpace();
+    AppTransferPatternName();
 }
