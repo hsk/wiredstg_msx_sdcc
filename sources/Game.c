@@ -12,6 +12,7 @@
 // 状態
 #define GAME_STATE_NULL 0x00
 #define GAME_STATE_PLAY 0x10
+#define GAME_STATE_OVER 0x20
 // 定数の定義
 // ゲームオーバー
 static char const gameOverString[] = {
@@ -20,6 +21,7 @@ static char const gameOverString[] = {
 // 変数の定義
 static char gameState;// 状態
 static char gamePause;// 一時停止
+static char gameScorePlus;
 // ゲームを初期化する
 void GameInitialize(void) {
     // ゲームの初期化
@@ -38,6 +40,7 @@ void GameInitialize(void) {
     appState = APP_STATE_GAME_UPDATE;
 }
 static void GamePlay(void);
+static void GameOver(void);
 static void GameHitCheck(void);
 // ゲームを更新する
 void GameUpdate(void) {
@@ -47,7 +50,9 @@ void GameUpdate(void) {
     }
     if (gamePause) return;
     SystemGetRandom();// 乱数の更新
-    GamePlay();
+    char a = gameState & 0xf0;// 状態別の処理
+    if (a == GAME_STATE_PLAY) GamePlay();
+    else GameOver();
 }
 // ゲームをプレイする
 static void GamePlay(void) {
@@ -67,6 +72,20 @@ static void GamePlay(void) {
     EnemyRender(); // 敵の描画
     BulletRender(); // 弾の描画
     AppTransferPatternName(); // パターンネームの転送
+    if (ship[SHIP_TYPE])return;// ゲームオーバーの条件
+    gameState = GAME_STATE_OVER; // ゲームオーバー
+}
+// ゲームオーバーになる
+static void GameOver(void) {
+    if (!(gameState&0xf)) {// 初期化の開始
+        // ゲームオーバーの表示
+        memcpy(&appPatternName[0x016b],gameOverString,0xa);
+        AppTransferPatternName();// パターンネームの転送
+        gameState++;// 初期化の完了
+        gameScorePlus=60;
+    }
+    if(--gameScorePlus) return;
+    appState = APP_STATE_GAME_INITIALIZE; // ゲーム初期化
 }
 // ヒットチェックを行う
 static void GameHitCheck(void) {
@@ -84,4 +103,29 @@ static void GameHitCheck(void) {
             ix[SHOT_STATE] = 0;
         }
     }
+    #if 1
+    // 弾のチェック
+    for(char b=bulletN,*ix=bullet;b;b--,ix+=BULLET_SIZE) {
+        if (ix[BULLET_STATE]==0)continue;
+        {
+            if (ship[SHIP_TYPE]!=SHIP_TYPE_VICVIPER) continue;
+            signed short a = ((signed short)ship[SHIP_POSITION_X])-ix[BULLET_POSITION_XI];
+            if (a < -4 || 4 < a) continue;
+            a = ((signed short)ship[SHIP_POSITION_Y])-ix[BULLET_POSITION_YI];
+            if (a < -4 || 4 < a) continue;
+            //if (--ship[SHIP_HP]) break;
+            ship[SHIP_TYPE] = SHIP_TYPE_BOMB;
+            ship[SHIP_STATE] = 0;
+        }
+        ix[BULLET_STATE] = 0;
+    }
+    // 自機のチェック
+    if (ship[SHIP_TYPE] != SHIP_TYPE_VICVIPER) return;
+    u16 tmp =
+        ((ship[SHIP_POSITION_Y]&0xf8)<<2)+(ship[SHIP_POSITION_X]>>3);
+    if (enemyCollision[tmp]==0) return;
+    //if(--ship[SHIP_HP]) return;
+    ship[SHIP_TYPE] = SHIP_TYPE_BOMB;
+    ship[SHIP_STATE] = 0;
+    #endif
 }
