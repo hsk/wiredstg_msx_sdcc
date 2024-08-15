@@ -96,7 +96,7 @@ static void GameOver(void) {
         gameScorePlus=60;
     }
     if(--gameScorePlus) return;
-    appState = APP_STATE_GAME_INITIALIZE; // ゲーム初期化
+    appState = APP_STATE_TITLE_INITIALIZE; // タイトルへ戻る
 }
 // ヒットチェックを行う
 static void GameHitCheck(void) {
