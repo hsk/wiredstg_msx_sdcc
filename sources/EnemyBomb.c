@@ -16,6 +16,7 @@ void EnemyBombUpdate(char* ix) {
         ix[ENEMY_ANIMATION] = 0x40;// アニメーションの設定
         ix[ENEMY_TIMER] = 2;// タイマの設定
         BulletGenerate((ix[ENEMY_POSITION_X]<<8)|ix[ENEMY_POSITION_Y]);// 撃ち返し
+        soundRequest[3] = (void*)enemyBombSe;// ＳＥの再生
         ix[ENEMY_STATE]++;// 初期化の完了
     }
     // アニメーションの更新

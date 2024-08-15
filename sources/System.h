@@ -1,5 +1,6 @@
 // System.h : システムライブラリ
 // フラグ
+#include "Sound.h"
 #define FLAG_H_TIMI             0
 #define FLAG_SOUND_SLEEP        1
 #define FLAG_CANCEL             7
@@ -82,6 +83,11 @@ void SystemTransferVram(void);
 void SystemClearSprite(void);
 void SystemTransferSprite(void);
 void SystemSetSprite(void);
+// サウンド
+void SystemInitializeSound(void);
+void SystemUpdateSound(void);
+void SystemSuspendSound(void);
+void SystemResumeSound(void);
 // 乱数
 char SystemGetRandom(void);
 // 三角関数
@@ -98,3 +104,6 @@ extern char videoPort[2];// ビデオ
 extern char videoRegister[8];
 extern char videoTransfer[VIDEO_TRANSFER_VRAM_SIZE * VIDEO_TRANSFER_SIZE];
 extern char sprite[128];// スプライト
+extern char* soundRequest[4];// サウンド
+extern char soundHead[8];
+extern char soundPlay[8];

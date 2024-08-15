@@ -86,6 +86,8 @@ void SystemInitialize(void) __naked {
     call    _SystemInitializeInput
     // ビデオの初期化
     call    _SystemInitializeVideo
+    // サウンドの初期化
+    call    _SystemInitializeSound
     // 終了
     ret
     __endasm;

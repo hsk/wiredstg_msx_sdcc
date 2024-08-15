@@ -30,6 +30,7 @@ void ShotGenerate(void) {
         ix[SHOT_RANGE_TOP] = a;
         ix[SHOT_RANGE_BOTTOM] = a;
         ix[SHOT_STATE]++;
+        soundRequest[3] = (void*)shotSe;// ＳＥの再生
         break;
     }
 }
